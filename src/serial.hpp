@@ -15,7 +15,7 @@ private:
     uint8_t data_byte; // Char variable to store data coming from the serial port.
     const static int size=20;
     char string[size]={0};
-    size_t ms_timeout = 10;
+    size_t ms_timeout = 250;
     SerialPort serial_port;
 public:
     serial(){}
@@ -61,30 +61,34 @@ public:
     int read_string(char (&string)[size]){
         int i=0;
         empty_string();
-        while(!serial_port.IsDataAvailable()){
-            usleep(ms_timeout) ;
-        }
         try{
-            serial_port.ReadByte(data_byte, ms_timeout);
-                if (data_byte==start_char){
-                    do{
-                        serial_port.ReadByte(data_byte, ms_timeout);
-                        if(data_byte!=terminating_char){
-                            string[i]=data_byte;
-                            i++;
-                        }else{
-                            return 1; // success, found $ and string finished
+            while(!serial_port.IsDataAvailable()){
+                std::cout<<"No Serial data\n"<<std::endl;
+                usleep(ms_timeout) ;
+            }
+                serial_port.ReadByte(data_byte, ms_timeout);
+                    if (data_byte==start_char){
+                        std::cout<<"found char"<<std::endl;
+                        do{
+                            serial_port.ReadByte(data_byte, ms_timeout);
+                            if(data_byte!=terminating_char){
+                                string[i]=data_byte;
+                                i++;
+                                std::cout<<i<<std::endl;
+                            }else{
+                                std::cout<<"Success"<<std::endl;
+                                return 1; // success, found $ and string finished
+                            }
+                            }while(i<size);
                         }
-                        }while(i<size);
-                    }
-                    
-            return 0; // character size reached
-        }
+                        
+                return 0; // character size reached
+            }
 
         catch (const ReadTimeout&)
         {
             std::cout<<"Timeout Receiving string\n";
-            return 2;
+            return 0;
         }
         }
     char write(char a){
