@@ -44,21 +44,21 @@ int main(int argc, char* argv[]) {
         }
     }
         if(commands.alt_override){
-        std::cout<<"Pitch Autopilot change (Degrees): ";
-        std::cin >> commands.set_pitch; commands.set_pitch=commands.set_pitch*deg2rad;
+            std::cout<<"Pitch Autopilot change (Degrees): ";
+            std::cin >> commands.set_pitch; commands.set_pitch=commands.set_pitch*deg2rad;
         }else{
-        std::cout<<"Altitude Change (ft): ";
-        std::cin >> commands.set_alt ;commands.set_alt -= c5a.z0;
+            std::cout<<"Altitude Change (ft): ";
+            std::cin >> commands.set_alt ;commands.set_alt -= c5a.z0;
         }
         if(commands.head_override){
-        std::cout<<"Roll Autopilot change (Degrees): ";
-        std::cin >> commands.set_roll; commands.set_roll=commands.set_roll*deg2rad;
+            std::cout<<"Roll Autopilot change (Degrees): ";
+            std::cin >> commands.set_roll; commands.set_roll=commands.set_roll*deg2rad;
         }else{
-        std::cout<<"Heading Change (Degrees): ";
-        std::cin >> commands.set_heading; commands.set_heading=commands.set_heading*deg2rad;
+            std::cout<<"Heading Change (Degrees): ";
+            std::cin >> commands.set_heading; commands.set_heading=commands.set_heading*deg2rad;
         }
-        std::cout<<"Velocity Autopilot change (ft/s): ";
-        std::cin >> commands.set_vel ;commands.set_vel += c5a.V0(0);
+            std::cout<<"Velocity Autopilot change (ft/s): ";
+            std::cin >> commands.set_vel ;commands.set_vel += c5a.V0(0);
 
     // Variables to be read from controls file
     double dt = 0.01;      // Default values

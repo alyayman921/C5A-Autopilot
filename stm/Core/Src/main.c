@@ -1,18 +1,24 @@
 #include "main.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
-
+#define string_size 20
 TIM_HandleTypeDef htim1;
-
 volatile uint32_t seconds_counter = 0;
-
+int timeout=10; // 10 ms 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
 extern int rx_receive(uint8_t *out);
+void empty_string();
+int read_string();
+void write_string();
 
-uint8_t number=0;
-uint8_t* rx_rec=&number;
+uint8_t start_char='!';
+uint8_t terminating_char='$';
+uint8_t byte_received=0;
+char string_received[string_size];
+char sent_string[22];
+uint8_t* rx_rec=&byte_received;
 
 int main(void)
 {
@@ -40,16 +46,51 @@ int main(void)
 
   while (1)
   {
-    if (rx_receive(rx_rec)){; // receive
+
+    if(rx_receive(rx_rec) && *rx_rec==start_char){ // if it detects start character
       HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-      number+=1;
-      CDC_Transmit_FS(rx_rec, 1);
-      HAL_Delay(10);
+      while( !read_string() ){ // return 1 when there's value received
+      }
+        string_received[11]=(int8_t)string_received[11]+1;
+        write_string();
+        HAL_Delay(10);
     }
+
   }
 }
 
+void empty_string(){
+        for (int i=0;i<string_size;i++){
+            string_received[i]='0';
+        }
+        for (int i=0;i<string_size+2;i++){
+            sent_string[i]='0';
+        }
+      }
 
+int read_string(){
+        int i=0;
+        empty_string();
+        do{
+            if(rx_receive(rx_rec)){
+                string_received[i]=*rx_rec;
+                i++;
+            }
+            if (*rx_rec==terminating_char){
+              HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_13);
+              return 1;
+            }
+        }while(i<20);
+          return 0; // limit reached
+        }
+void write_string(){
+  sent_string[0]=start_char;
+for(int i=1;i<21;i++){
+  sent_string[i]=string_received[i-1];
+}
+  sent_string[21]=terminating_char;
+  CDC_Transmit_FS((uint8_t*)sent_string, 22);
+}
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -124,8 +165,7 @@ static void MX_TIM1_Init(void)
   }
 }
 
-static void MX_GPIO_Init(void)
-{
+static void MX_GPIO_Init(void){
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();

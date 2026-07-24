@@ -1,8 +1,10 @@
+.sublime-workspace
 *.zip
 .fuse*
 *.csv
 *.slx
 *.slxc
+*.txt
 slprj/
 Autopilot
 tests*
@@ -13,5 +15,3 @@ meta/.~lock.C5A.xlsx#
 meta/controls.txt
 FlightSimulator
 stm/build
-#.gitignore
-

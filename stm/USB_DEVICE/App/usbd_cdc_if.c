@@ -4,8 +4,6 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
-
-
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 

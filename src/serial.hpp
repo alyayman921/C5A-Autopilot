@@ -6,14 +6,16 @@
 #include <unistd.h>
 #include <cstdint>
 using namespace LibSerial ;
+char start_char='!';
+char terminating_char='$';
 
 class serial{
 private:
     //constexpr const char* const SERIAL_PORT_1 = "/dev/ttyACM0" ;
     uint8_t data_byte; // Char variable to store data coming from the serial port.
-    static const int size=20;
+    const static int size=20;
     char string[size]={0};
-    size_t ms_timeout = 5;
+    size_t ms_timeout = 10;
     SerialPort serial_port;
 public:
     serial(){}
@@ -43,7 +45,7 @@ public:
     }
     void empty_string(){
         for (int i=0;i<size;i++){
-            string[0]='0';
+            string[i]='0';
         }
     }
     char read(){
@@ -56,6 +58,35 @@ public:
         }
         return data_byte;
     }
+    int read_string(char (&string)[size]){
+        int i=0;
+        empty_string();
+        while(!serial_port.IsDataAvailable()){
+            usleep(ms_timeout) ;
+        }
+        try{
+            serial_port.ReadByte(data_byte, ms_timeout);
+                if (data_byte==start_char){
+                    do{
+                        serial_port.ReadByte(data_byte, ms_timeout);
+                        if(data_byte!=terminating_char){
+                            string[i]=data_byte;
+                            i++;
+                        }else{
+                            return 1; // success, found $ and string finished
+                        }
+                        }while(i<size);
+                    }
+                    
+            return 0; // character size reached
+        }
+
+        catch (const ReadTimeout&)
+        {
+            std::cout<<"Timeout Receiving string\n";
+            return 2;
+        }
+        }
     char write(char a){
         try{
             serial_port.WriteByte(a) ;
@@ -68,35 +99,15 @@ public:
     }
     char write_string(char* a){
         try{
+            serial_port.WriteByte(start_char) ;
             serial_port.Write(a) ;
+            serial_port.WriteByte(terminating_char) ;
         }
 
         catch (const ReadTimeout&)
         {
         }
         return data_byte;
-    }
-    char* read_string(){
-        int i=0;
-        empty_string();
-        while(!serial_port.IsDataAvailable()){
-            usleep(ms_timeout) ;
-        }
-        
-        try{
-            do{
-                serial_port.ReadByte(data_byte, ms_timeout) ;
-                std::cout<<" \""<<data_byte<<"\"\n";
-                string[i]=data_byte;
-                i++;
-            }while(i<20);
-        }
-
-        catch (const ReadTimeout&)
-        {
-        }
-
-        return string;
     }
     
 };
