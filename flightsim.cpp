@@ -106,6 +106,8 @@ int main(int argc, char* argv[]) {
     if (!final_state.allFinite()) {
         std::cerr << "\nWarning: final state contains NaN/Inf - simulation diverged." << std::endl;
     }
+    
+    
     auto now =std::chrono::steady_clock::now();
     const std::chrono::duration<double> elapsed_seconds{now-prev};
     float elapsed= (float) elapsed_seconds.count();

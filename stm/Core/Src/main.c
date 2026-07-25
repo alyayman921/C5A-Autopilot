@@ -58,23 +58,23 @@ int main(void){
 }
   while (1)
   {
-    // if(rx_receive(rx_rec) && *rx_rec==start_char){
-    //   while(!read_string()){}
-    //     handle_ints();
-    //     if(inputs[0]==12345){
-    //       HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    //       while (!write_ack());
-    //       // write_string();
-    //     }else if(inputs[0]==54321){
-    //       HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
-    //       HAL_Delay(2000);
-    //       HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
-    //     }
-    //     // write_string();
-    //   // HAL_Delay(10);
-    // }
+    if(rx_receive(rx_rec) && *rx_rec==start_char){
+      if(read_string()){
+        handle_ints();
+        if(inputs[0]==12345){
+          HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+          // write_ack();
+          // write_string();
+          // HAL_Delay(500);
+        }else if(inputs[0]==54321){
+          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
+          HAL_Delay(2000);
+          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
+        }
+      }
+    }
     write_ack();
-    HAL_Delay(1);
+    HAL_Delay(5);
   }
 }
 

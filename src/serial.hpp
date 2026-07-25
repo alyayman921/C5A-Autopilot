@@ -20,8 +20,7 @@ private:
 public:
     serial(){}
     serial(char serial_port[]){
-        try
-        {
+        try{
             usleep(1000) ;
             this->serial_port.Open(serial_port);
         }
@@ -63,12 +62,12 @@ public:
         empty_string();
         try{
             while(!serial_port.IsDataAvailable()){
-                std::cout<<"No Serial data\n"<<std::endl;
+                // std::cout<<"No Serial data\n"<<std::endl;
                 usleep(ms_timeout) ;
             }
                 serial_port.ReadByte(data_byte, ms_timeout);
                     if (data_byte==start_char){
-                        std::cout<<"found char"<<std::endl;
+                        // std::cout<<"found char"<<std::endl;
                         do{
                             serial_port.ReadByte(data_byte, ms_timeout);
                             if(data_byte!=terminating_char){
@@ -76,18 +75,17 @@ public:
                                 i++;
                                 std::cout<<i<<std::endl;
                             }else{
-                                std::cout<<"Success"<<std::endl;
+                                // std::cout<<"Success"<<std::endl;
                                 return 1; // success, found $ and string finished
                             }
                             }while(i<size);
                         }
-                        
                 return 0; // character size reached
             }
 
         catch (const ReadTimeout&)
         {
-            std::cout<<"Timeout Receiving string\n";
+            // std::cout<<"Timeout Receiving string\n";
             return 0;
         }
         }
