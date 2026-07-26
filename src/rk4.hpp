@@ -135,6 +135,7 @@ class rk4{
                 state_history[*step + 1] = y;
                 
                 // update the controllers after solving
+                con_obj.send_states();
                 con_obj.pitch_controller();
                 con_obj.velocity_controller();
                 con_obj.altitude_controller();

@@ -1,12 +1,18 @@
 #pragma once
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include "serial.hpp"
 #include "tf.hpp"
+#include "serial.hpp"
+#include "serial_scanner.hpp"
 extern double deg2rad;
-extern double rad2deg; 
+extern double rad2deg;
 
 class controller{
 	private:
+		mySerial SP;
+		char serial_states[256];
+		char received_CA[64]; // Control action
 		bool Autopiloted;
 		float da,de,dth,dr;
 		Eigen::Matrix<double,4,1>* Controls;
@@ -53,7 +59,7 @@ class controller{
 
 	public:
 		controller(Eigen::Matrix<double,4,1>* Controls,aircraft_data *ac ,flight_path *str_h ,
-			double dt,int *step,autopilot_inputs *commands ,bool Autopiloted=true){
+			double dt,int *step,autopilot_inputs *commands ,bool Autopiloted){
 			this->Controls=Controls;
 			this->Autopiloted=Autopiloted;
 			this->dt=dt;
@@ -61,6 +67,8 @@ class controller{
 			this->step=step;
 			this->ac=ac;
 			this->commands=commands;
+			std::string sp=getSerialPort();
+            SP= mySerial(sp);
 			// Pitch
 			double servo_num=10; double servo_den[2]={10 ,1.0};
 			double pitch_num=1.9948; double pitch_den[2]={0.0 ,1.0};
@@ -84,6 +92,7 @@ class controller{
 			this->yaw_damper=transferFunction(2 , 2, yaw_num, yaw_den, step, dt);
 			this->yaw_servo=transferFunction(1 , 2, servo_num, servo_den, step, dt);
 
+			*Controls={0,0,0,0};
 		}
 		void rk4_pointers(Eigen::Matrix<double, 9, 1>* results){
 			this->results=results; // store a pointer to results vector
@@ -91,10 +100,7 @@ class controller{
 
 		void pitch_controller(){
 
-			if (Autopiloted&&!*step){
-				*Controls={0,0,0,0};
-			}
-			if (Autopiloted){
+			if (Autopiloted&& (commands->ext_controller)){
 				delta_theta=results[*step][7]-results[0][7];
 				y_pitch=pitch_tf.solve(((commands->set_pitch)-delta_theta));
 				de=-(y_pitch - ((delta_theta*1.734+results[*step][4])*1.5236));
@@ -108,10 +114,10 @@ class controller{
 		void altitude_controller(){
 			/*
 			    0.011498 (s+0.3709)
-  				------------------- oh no
+  				-------------------
         				(s+10)
 			*/
-			if (Autopiloted&&!(commands->alt_override)){
+			if (Autopiloted&&!(commands->alt_override)&&(commands->ext_controller)){
 					y_alt=alt_tf.solve(((commands->set_alt)-str_h->h));
 					commands->set_pitch=y_alt;
 				}
@@ -123,7 +129,7 @@ class controller{
   				------------------- = 1549.1 + 125.2/s
            				s
 			*/
-			if (Autopiloted){
+			if (Autopiloted&&(commands->ext_controller)){
 				y_vel=vel_tf.solve(((commands->set_vel)-results[*step][0]));
 				dth=throttle_valve.solve(y_vel);
 				dth=engine_lag.solve(dth);
@@ -148,9 +154,11 @@ class controller{
 			      (s+15)
  
 			*/
-			da=PI_Roll.solve(((commands->set_roll)-results[*step][6]))-PD_Roll.solve(results[*step][6]);
-			da=roll_servo.solve(da);
-			*Controls={da,de,dth,dr};
+			if(Autopiloted&&(commands->ext_controller)){
+				da=PI_Roll.solve(((commands->set_roll)-results[*step][6]))-PD_Roll.solve(results[*step][6]);
+				da=roll_servo.solve(da);
+				*Controls={da,de,dth,dr};
+			}
 		}
 		void yaw_controller(){
 			/*
@@ -159,19 +167,76 @@ class controller{
 			  ---------
 			   (s+0.1)
 			*/
-			if(!(commands->head_override)){
-				
-			coordinated_roll=((commands->set_heading)-results[*step][8])*(results[0][0])/ac->g/10;
-			if (coordinated_roll>25){coordinated_roll=25;}
-			if (coordinated_roll<-25){coordinated_roll=-25;}
-			commands->set_roll=coordinated_roll;
-			//roll_controller();
-			dr=yaw_damper.solve(results[*step][5]);
-			dr=yaw_servo.solve(dr);
-			*Controls={da,de,dth,dr};
+			if(Autopiloted&&!(commands->head_override)&&(commands->ext_controller)){
+				coordinated_roll=((commands->set_heading)-results[*step][8])*(results[0][0])/ac->g/10;
+				if (coordinated_roll>25){coordinated_roll=25;}
+				if (coordinated_roll<-25){coordinated_roll=-25;}
+				commands->set_roll=coordinated_roll;
+				//roll_controller();
+				dr=yaw_damper.solve(results[*step][5]);
+				dr=yaw_servo.solve(dr);
+				*Controls={da,de,dth,dr};
 			}
 
 		}
-		
+// --------------- conv to 9 char Send To Serial
 
+	// Memory Inefficient Black Majic from the ai, don't @ me 
+void pack_serial_data(char buffer[256]) {
+    char *ptr = buffer;
+
+    // ---- First 10 chars: booleans as '0' or '1' ----
+    *ptr++ = Autopiloted ? '1' : '0';
+    *ptr++ = commands->alt_override ? '1' : '0';
+    *ptr++ = commands->head_override ? '1' : '0';
+    *ptr++ = commands->ext_controller ? '1' : '0';
+    // pad remaining 6 positions with '0'
+    for (int i = 0; i < 6; ++i) *ptr++ = '0';
+
+    // ---- Helper lambda for floats: exactly 9 chars with 2 decimals ----
+    // Format: S DDDD . DD (sign + 4 digits + dot + 2 decimals = 9 chars)
+    // Range: ±9999.99
+    auto append_float = [&](double val) {
+        // Clamp to ±9999.99
+        if (val > 9999.99) val = 9999.99;
+        if (val < -9999.99) val = -9999.99;
+        
+        char buf[15];
+        snprintf(buf, sizeof(buf), "%+09.2f", val);
+        
+        // buf is now exactly 9 chars: "+0000.00" or "-9999.99"
+        for (int i = 0; i < 9; i++) {
+            *ptr++ = buf[i];
+        }
+    };
+
+    // ---- 5 setpoints (5 × 9 = 45 chars) ----
+    append_float(commands->set_pitch);
+    append_float(commands->set_vel);
+    append_float(commands->set_alt);
+    append_float(commands->set_heading);
+    append_float(commands->set_roll);
+
+    // ---- 9 results from state vector (9 × 9 = 81 chars) ----
+    for (int i = 0; i < 9; ++i) {
+        append_float((*results)(i));
+    }
+
+    // ---- 5 flight‑path variables (5 × 9 = 45 chars) ----
+    append_float(str_h->v_tot);
+    append_float(str_h->delta_h_dot);
+    append_float(str_h->alpha);
+    append_float(str_h->beta);
+    append_float(str_h->gamma);
+
+    // ---- Fill the rest of the 256‑byte buffer with zeros ----
+    size_t used = ptr - buffer;
+    if (used < 256) {
+        memset(ptr, 0, 256 - used);
+    }
+}
+void send_states(){
+	pack_serial_data(serial_states);
+	SP.write_string(serial_states);
+}
 };

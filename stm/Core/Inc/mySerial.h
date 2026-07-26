@@ -1,16 +1,16 @@
 #ifndef MY_SERIAL_H
 #define MY_SERIAL_H
-#define n_floats 1
-#define n_ints 1
-#define size_float 4 // in received bytes
-#define size_int 4 // in received bytes
-#define string_size n_floats*size_float
+#define size_int 1 // char boolean 1 or 0
+#define n_ints 4   // for n bools
+#define n_floats 20 // then the states
+#define size_float 9 // in received chars
+#define Buffer_Size 256 // actual received without start/term
 #include <stdlib.h>
 #include <stdint.h>
 
-// void set_serial_vars(uint8_t* byte_received,int inputs[n_floats]);
 void empty_string();
 int read_string();
+void echo_string();
 void write_string();
 int write_ack();
 void handle_ints();

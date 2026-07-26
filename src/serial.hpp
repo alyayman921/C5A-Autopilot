@@ -5,45 +5,41 @@
 #include <iostream>
 #include <unistd.h>
 #include <cstdint>
+#define Buffer_Size 256 // after throwing the start and end characters
 using namespace LibSerial ;
 char start_char='!';
 char terminating_char='$';
 
-class serial{
+class mySerial{
 private:
-    //constexpr const char* const SERIAL_PORT_1 = "/dev/ttyACM0" ;
-    uint8_t data_byte; // Char variable to store data coming from the serial port.
-    const static int size=20;
-    char string[size]={0};
+    uint8_t data_byte;
+    char string[Buffer_Size]={0};
     size_t ms_timeout = 5;
     SerialPort serial_port;
+
 public:
-    serial(){}
-    serial(char serial_port[]){
+    mySerial(){}
+    mySerial(std::string serial_port_string){
         try{
             usleep(1000) ;
-            this->serial_port.Open(serial_port);
+            this->serial_port.Open(serial_port_string);
         }
         catch (const OpenFailed&)
         {
             std::cerr << "The serial port did not open correctly." << std::endl ;
         }
-        // Set the baud rate of the serial port.
+        std::cerr << "Connected To Serial Port: " <<serial_port_string<< std::endl ;
         this->serial_port.SetBaudRate(BaudRate::BAUD_115200) ;
-        // Set the number of data bits.
         this->serial_port.SetCharacterSize(CharacterSize::CHAR_SIZE_8) ;
-        // Turn off hardware flow control.
         this->serial_port.SetFlowControl(FlowControl::FLOW_CONTROL_NONE);
-        // Disable parity.
         this->serial_port.SetParity(Parity::PARITY_NONE) ;
-        // Set the number of stop bits.
         this->serial_port.SetStopBits(StopBits::STOP_BITS_1) ;
     }
     void close(){
         serial_port.Close();
     }
     void empty_string(){
-        for (int i=0;i<size;i++){
+        for (int i=0;i<Buffer_Size;i++){
             string[i]='0';
         }
     }
@@ -57,7 +53,7 @@ public:
         }
         return data_byte;
     }
-    int read_string(char (&string)[size]){
+    int read_string(char (&string)[Buffer_Size]){
         int i=0;
         empty_string();
         try{
@@ -74,7 +70,8 @@ public:
                             // std::cout<<"Success"<<std::endl;
                             return 1; // success, found $ and string finished
                         }
-                        }while(i<size);
+                        }while(i<Buffer_Size); //it was buffer+1, but might be buffer overflow 
+                        // check later
                     }
             return 0;
         }
@@ -103,4 +100,5 @@ public:
         }
         return data_byte;
     }
+    
 };

@@ -12,10 +12,11 @@ int main(int argc, char* argv[]) {
         if (arg == "--help") {
             std::cout<< "\nFlight Simulator for Lockheed Martin's C5A Aircraft\n";
             std::cout<< "Run the Simulator with the supported input arguments like \"./FlightSim --arg\n";
-            std::cout<< "Run the Simulator with no argumen\n\n";
+            std::cout<< "Run the Simulator with no arguments for normal usage \n\n";
             std::cout<<"Arguments    Usage\n";
             std::cout<<"---------    ---------------------------------------------------------\n";
             std::cout<<"--help       print this message\n";
+            std::cout<<"--ext        use external Micorcontroller as aircraft controller\n";
             std::cout<<"--loop       prevent the program from exiting after solving\n";
             std::cout<<"--manual     read the control commands from the textfile controls.txt\n";
             std::cout<<"--pitch      overrides altitude loop straight to pitch control\n";
@@ -39,6 +40,10 @@ int main(int argc, char* argv[]) {
             if (arg == "--roll") {
                 std::cout<<"Skipping heading loop\n";
                 commands.head_override = true;
+            }
+            if (arg == "--ext") {
+                std::cout<<"External Controller\n";
+                commands.ext_controller = true;
             }
 
         }

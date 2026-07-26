@@ -1,12 +1,7 @@
 #include "main.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
-// #include "mySerial.h"
-#define n_floats 1
-#define n_ints 1
-#define size_float 4 // in received bytes
-#define size_int 4 // in received bytes
-#define string_size n_floats*size_float // actual received without start/term
+
 TIM_HandleTypeDef htim1;
 
 uint8_t start_char='!';
@@ -21,9 +16,9 @@ static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
 extern int rx_receive(uint8_t *out);
 
-// void set_serial_vars(uint8_t* byte_received,int input1_int[n_ints]);
 int read_string();
 int write_ack();
+void echo_string();
 void write_string();
 void handle_ints();
 void handle_floats();
@@ -51,36 +46,18 @@ int main(void){
   HAL_TIM_Base_Start_IT(&htim1);
 
   // set_serial_vars(rx_rec, input1_int);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
-
-
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
 }
   while (1)
   {
     if(rx_receive(rx_rec) && *rx_rec==start_char){
       HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-      // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
       if(read_string()){
-        handle_ints();
-        if(input_i[0]==5678){
-          // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
-          // write_ack();
-          CDC_Transmit_FS((uint8_t*)"!Input was  56789$\n",18);
-          // HAL_Delay(500);
-        }
-        if(input_i[0]==1234){
-          // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
-          // write_ack();
-          CDC_Transmit_FS((uint8_t*)"!Input was 12345$\n",18);
-          // HAL_Delay(500);
-        }
+        // handle_ints();
+        echo_string();
 
       }
     }
-    // write_ack();
-    // HAL_Delay(5);
   }
 }
 
