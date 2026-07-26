@@ -2,30 +2,31 @@
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
 // #include "mySerial.h"
-#define n_floats 4
-#define size_float 5 // in received bytes
-#define string_size n_floats*size_float
+#define n_floats 1
+#define n_ints 1
+#define size_float 4 // in received bytes
+#define size_int 4 // in received bytes
+#define string_size n_floats*size_float // actual received without start/term
 TIM_HandleTypeDef htim1;
 
 uint8_t start_char='!';
 uint8_t terminating_char='$';
 uint8_t byte_received;
 uint8_t* rx_rec=&byte_received;
-int inputs[n_floats]={0.0};
+int input_i[n_ints]={0.0};
+int input_f[n_floats]={0.0};
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
 extern int rx_receive(uint8_t *out);
 
-void set_serial_vars(uint8_t* byte_received,int inputs[n_floats]);
-void empty_string();
+// void set_serial_vars(uint8_t* byte_received,int input1_int[n_ints]);
 int read_string();
-void write_string();
 int write_ack();
+void write_string();
 void handle_ints();
-
-
+void handle_floats();
 
 int main(void){
 {
@@ -42,39 +43,44 @@ int main(void){
   GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
-  HAL_Delay(200);
   MX_USB_DEVICE_Init();
-  HAL_Delay(1000);
+  HAL_Delay(200);
   HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
   HAL_Delay(200);
   HAL_TIM_Base_Start_IT(&htim1);
 
-  set_serial_vars(rx_rec, inputs);
+  // set_serial_vars(rx_rec, input1_int);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
 
 
 }
   while (1)
   {
     if(rx_receive(rx_rec) && *rx_rec==start_char){
+      HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+      // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
       if(read_string()){
         handle_ints();
-        if(inputs[0]==12345){
-          HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-          // write_ack();
-          // write_string();
-          // HAL_Delay(500);
-        }else if(inputs[0]==54321){
-          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
-          HAL_Delay(2000);
+        if(input_i[0]==5678){
+          // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
           HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
+          // write_ack();
+          CDC_Transmit_FS((uint8_t*)"!Input was  56789$\n",18);
+          // HAL_Delay(500);
         }
+        if(input_i[0]==1234){
+          // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
+          // write_ack();
+          CDC_Transmit_FS((uint8_t*)"!Input was 12345$\n",18);
+          // HAL_Delay(500);
+        }
+
       }
     }
-    write_ack();
-    HAL_Delay(5);
+    // write_ack();
+    // HAL_Delay(5);
   }
 }
 
