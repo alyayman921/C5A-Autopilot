@@ -103,7 +103,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* USER CODE END 5 */
 }
 
-#define RX_RING_SIZE 32  // must be power of 2 for the mask trick below
+#define RX_RING_SIZE 256  // must be power of 2 for the mask trick below
 
 static volatile uint8_t rx_ring[RX_RING_SIZE];
 static volatile uint16_t rx_head = 0; // written by USB ISR

@@ -194,17 +194,17 @@ void pack_serial_data(char buffer[256]) {
     for (int i = 0; i < 6; ++i) *ptr++ = '0';
 
     // ---- Helper lambda for floats: exactly 9 chars with 2 decimals ----
-    // Format: S DDDD . DD (sign + 4 digits + dot + 2 decimals = 9 chars)
-    // Range: ±9999.99
+    // Format: S DDDDD . DD (sign + 5 digits + dot + 2 decimals = 9 chars)
+    // Range: ±99999.99
     auto append_float = [&](double val) {
-        // Clamp to ±9999.99
-        if (val > 9999.99) val = 9999.99;
-        if (val < -9999.99) val = -9999.99;
+        // Clamp to ±99999.99
+        if (val > 99999.99) val = 99999.99;
+        if (val < -99999.99) val = -99999.99;
         
         char buf[15];
         snprintf(buf, sizeof(buf), "%+09.2f", val);
         
-        // buf is now exactly 9 chars: "+0000.00" or "-9999.99"
+        // buf is now exactly 9 chars: "+0000.00" or "-99999.99"
         for (int i = 0; i < 9; i++) {
             *ptr++ = buf[i];
         }

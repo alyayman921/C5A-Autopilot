@@ -11,11 +11,13 @@ extern uint8_t terminating_char;
 extern uint8_t* rx_rec;
 char str_received[Buffer_Size];
 char sent_string[Buffer_Size+2];
+int str_length = 0;
 
 extern int input_i[n_ints];
 extern float input_f[n_floats];
 
 void empty_string(void){
+        str_length = 0;
         for (int i=0;i<Buffer_Size;i++){
             str_received[i]='0';
         }
@@ -26,34 +28,40 @@ void empty_string(void){
 
 int read_string(void){
         int i=0;
+        int idle = 0;
         empty_string();
         do{
             if(rx_receive(rx_rec)){
-                str_received[i]=*rx_rec;
+                idle = 0;
+                if (*rx_rec == terminating_char) {
+                    str_length = i;
+                    return 1;
+                }
+                str_received[i] = *rx_rec;
                 i++;
+            } else {
+                if (++idle > 100000) break;
             }
-            if (*rx_rec==terminating_char){
-              return 1;
-            }
-        }while(i<Buffer_Size); // so it checks after 256 for end_char
-          return 0; // string limit limit reached
+        }while(i < Buffer_Size);
+        str_length = i;
+        return 0;
 }
 
 void echo_string(void){
-  sent_string[0]=start_char;
-  for(int i=1;i<Buffer_Size+1;i++){
-    sent_string[i]=str_received[i-1];
+  sent_string[0] = start_char;
+  for(int i = 0; i < str_length; i++){
+    sent_string[i+1] = str_received[i];
   }
-  sent_string[Buffer_Size+1]=terminating_char;
-  CDC_Transmit_FS((uint8_t*)sent_string, Buffer_Size+2);
+  sent_string[str_length + 1] = terminating_char;
+  CDC_Transmit_FS((uint8_t*)sent_string, str_length + 2);
 }
 void write_string(void){
-  sent_string[0]=start_char;
-  for(int i=1;i<Buffer_Size+1;i++){
-    sent_string[i]=str_received[i-1];
+  sent_string[0] = start_char;
+  for(int i = 0; i < str_length; i++){
+    sent_string[i+1] = str_received[i];
   }
-  sent_string[Buffer_Size+1]=terminating_char;
-  CDC_Transmit_FS((uint8_t*)sent_string, Buffer_Size+2);
+  sent_string[str_length + 1] = terminating_char;
+  CDC_Transmit_FS((uint8_t*)sent_string, str_length + 2);
 }
 
 int write_ack(void){
