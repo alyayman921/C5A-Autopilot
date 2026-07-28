@@ -37,13 +37,13 @@ cd ../
 **Compiling**
 ```bash
 # Back in the Main folder
-g++ flightsim.cpp -o FlightSimulator -I/usr/include/eigen3 -lm -lxlsxio_read
+g++ flightsim.cpp -o FlightSimulator -I/usr/include/eigen3 -lm -lxlsxio_read -lserial
 ```
 
 The release binaries are compiled with gcc-9 to ensure compatibility, since my arch uses gcc16.1, on Ubuntu you'd have to wait 2 years or so to catch up with this version of c++ libraries
 
 ```bash
-g++-9 -std=c++17 flightsim.cpp -o FlightSimulator -I/usr/include/eigen3  -Wl,-Bstatic -lxlsxio_read -Wl,-Bdynamic -lexpat -lminizip -lz -lm
+g++-9 -std=c++17 flightsim.cpp -o FlightSimulator -I/usr/include/eigen3 -Wl,-Bstatic -lxlsxio_read -L/usr/local/lib -lserial -Wl,-Bdynamic  -lexpat -lminizip -lz -lm
 ```
 
 **Run with --help and get started**

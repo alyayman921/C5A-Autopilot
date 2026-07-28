@@ -6,6 +6,7 @@
 *.slxc
 *.txt
 slprj/
+Release/
 Autopilot
 tests*
 test*
