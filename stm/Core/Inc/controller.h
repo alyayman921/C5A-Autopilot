@@ -151,9 +151,9 @@ void roll_controller(float *results, struct autopilot_inputs *cmd){
 
 void yaw_controller(float *results, struct autopilot_inputs *cmd){
     if (!cmd->head_override && cmd->ext_controller){
-        coordinated_roll = (cmd->set_heading - results[8]) * results[0] / 9.81f / 10.0f;
-        if (coordinated_roll > 25.0f) coordinated_roll = 25.0f;
-        if (coordinated_roll < -25.0f) coordinated_roll = -25.0f;
+        coordinated_roll = (cmd->set_heading - results[8]) * results[0] / 32.17405f / 10.0f;
+        if (coordinated_roll > 25.0f * deg2rad) coordinated_roll = 25.0f * deg2rad;
+        if (coordinated_roll < -25.0f * deg2rad) coordinated_roll = -25.0f * deg2rad;
         cmd->set_roll = coordinated_roll;
         dr = solve_leadlag(&yaw_damper_state, 0.0f, 0.88711f, 0.1f, 1.0f, results[5]);
         dr = solve_lag(&yaw_servo_state, 10.0f, 10.0f, 1.0f, dr);

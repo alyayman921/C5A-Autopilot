@@ -84,16 +84,17 @@ int main(void){
         fp.beta = input_f[18];
         fp.gamma = input_f[19];
 
-        alt_controller(&cmd, &fp);
+        if (!cmd.alt_override) {
+          alt_controller(&cmd, &fp);
+        }
+
         pitch_controller(results, &cmd);
         velocity_controller(results, &cmd);
-        if (!cmd.alt_override) {
+        
+          if (!cmd.head_override) {
             yaw_controller(results, &cmd);
-            roll_controller(results, &cmd);
-        } else {
-            roll_controller(results, &cmd);
-            dr = 0;
-        }
+          }
+        roll_controller(results, &cmd);
         write_control_actions(da, de, dth, dr);
       }
     } else {
