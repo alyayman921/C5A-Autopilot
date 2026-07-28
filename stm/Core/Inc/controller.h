@@ -57,6 +57,23 @@ float coordinated_roll;
 struct tf_leadlag yaw_damper_state;
 struct tf_lag yaw_servo_state;
 
+void reset_controller(void){
+    da=0; de=0; dth=0; dr=0;
+    pitch_initialized=0; pitch_initial=0;
+    y_pitch=0; y_vel=0; y_alt=0; coordinated_roll=0;
+    pitch_tf_state.y_prev=0; pitch_tf_state.r_prev=0;
+    pitch_servo_state.y_prev=0;
+    vel_tf_state.y_prev=0; vel_tf_state.r_prev=0;
+    throttle_valve_state.y_prev=0;
+    engine_lag_state.y_prev=0;
+    alt_tf_state.y_prev=0; alt_tf_state.r_prev=0;
+    pi_roll_state.y_prev=0; pi_roll_state.r_prev=0;
+    pd_roll_state.y_prev=0; pd_roll_state.r_prev=0;
+    roll_servo_state.y_prev=0;
+    yaw_damper_state.y_prev=0; yaw_damper_state.r_prev=0;
+    yaw_servo_state.y_prev=0;
+}
+
 float solve_leadlag(struct tf_leadlag *s, float a0, float a1, float b1, float r){
     float y = b1 * s->y_prev + a1 * r + a0 * s->r_prev;
     s->r_prev = r;

@@ -58,15 +58,8 @@ void echo_string(void){
 }
 
 static void format_control_float(float val, char *out){
-  if (val > 99.99999f) val = 99.99999f;
-  if (val < -99.99999f) val = -99.99999f;
   char tmp[10];
-  float abs_val = val < 0 ? -val : val;
-  if (abs_val >= 10.0f){
-    snprintf(tmp, sizeof(tmp), "%+9.5f", (double)val);
-  } else {
-    snprintf(tmp, sizeof(tmp), "%+9.6f", (double)val);
-  }
+  snprintf(tmp, sizeof(tmp), "%+.2e", (double)val);
   for (int j = 0; j < 9; j++) out[j] = tmp[j];
 }
 

@@ -52,9 +52,11 @@ int main(void){
   // set_serial_vars(rx_rec, input1_int);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
 }
+  int idle = 0;
   while (1)
   {
     if(rx_receive(rx_rec) && *rx_rec==start_char){
+      idle = 0;
       HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
       if(read_string()){
         step++;
@@ -93,6 +95,12 @@ int main(void){
             dr = 0;
         }
         write_control_actions(da, de, dth, dr);
+      }
+    } else {
+      idle++;
+      if (idle > 100000) {
+        reset_controller();
+        idle = 0;
       }
     }
   }

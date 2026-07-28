@@ -18,7 +18,8 @@ class rk4{
         DataLogger stateLogger;
         DataLogger forceLogger;
         DataLogger accelLogger;
-        DataLogger momentLogger; 
+        DataLogger momentLogger;
+        DataLogger controlLogger;
         bool loggersInitialized,logging;
 
     public:
@@ -72,6 +73,11 @@ class rk4{
                 "time", "Mx", "My", "Mz"
             };
             momentLogger.writeHeader(momentHeaders);
+            controlLogger.init("controls");
+            std::vector<std::string> controlHeaders = {
+                "time", "da", "de", "dth", "dr"
+            };
+            controlLogger.writeHeader(controlHeaders);
             loggersInitialized = true;
             //std::cout << "All loggers initialized successfully!" << std::endl;
         }
@@ -153,6 +159,7 @@ class rk4{
                                      RBDobj.getTotalForces());
                 accelLogger.logWithTime(current_time, RBDobj.getAerodynamicAccel());
                 momentLogger.logMoments(current_time, RBDobj.getTotalMoments());
+                controlLogger.logWithTime(current_time, *con_obj.get_controls());
                 }
                 // Simulation Progress animation
                 if(*step%10==0){
@@ -182,6 +189,7 @@ class rk4{
                 forceLogger.close();
                 accelLogger.close();
                 momentLogger.close();
+                controlLogger.close();
             }
         }
 };

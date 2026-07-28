@@ -1,6 +1,7 @@
 #pragma once
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <cstdlib>
 #include "serial.hpp"
 #include "tf.hpp"
 #include "serial.hpp"
@@ -242,8 +243,15 @@ class controller{
 	        memset(ptr, 0, 256 - used);
 	    }
 	}
+	Eigen::Matrix<double,4,1>* get_controls() { return Controls; }
 	void send_states(){
 		if(commands->ext_controller){
+			if (SP.read_string(received_CA)) {
+				*Controls = {std::atof(received_CA),
+				             std::atof(received_CA + 9),
+				             std::atof(received_CA + 18),
+				             std::atof(received_CA + 27)};
+			}
 			pack_serial_data(serial_states);
 			SP.write_string(serial_states);
 		}
