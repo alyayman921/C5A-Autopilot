@@ -14,7 +14,7 @@ class mySerial{
 private:
     uint8_t data_byte;
     char string[Buffer_Size]={0};
-    size_t ms_timeout = 5;
+		size_t ms_timeout = 50;
     SerialPort serial_port;
 
 public:
@@ -77,7 +77,6 @@ public:
         }
     catch (const ReadTimeout&)
     {
-        std::cout<<"Timeout Receiving string\n";
         return 0;
     }
 }

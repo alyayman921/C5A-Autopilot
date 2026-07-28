@@ -2,7 +2,7 @@
 #include "main.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
-//extern int timeout;
+#include <stdio.h>
 
 extern int rx_receive(uint8_t *out);
 extern uint8_t start_char;
@@ -40,7 +40,7 @@ int read_string(void){
                 str_received[i] = *rx_rec;
                 i++;
             } else {
-                if (++idle > 100000) break;
+                if (++idle > 100000) break; // if 100,000 cycle passed skip
             }
         }while(i < Buffer_Size);
         str_length = i;
@@ -54,23 +54,43 @@ void echo_string(void){
   }
   sent_string[str_length + 1] = terminating_char;
   CDC_Transmit_FS((uint8_t*)sent_string, str_length + 2);
+  // note: sent_string is global, so it persists for async USB DMA
 }
-void write_string(void){
-  sent_string[0] = start_char;
-  for(int i = 0; i < str_length; i++){
-    sent_string[i+1] = str_received[i];
+
+static void format_control_float(float val, char *out){
+  if (val > 99.99999f) val = 99.99999f;
+  if (val < -99.99999f) val = -99.99999f;
+  char tmp[10];
+  float abs_val = val < 0 ? -val : val;
+  if (abs_val >= 10.0f){
+    snprintf(tmp, sizeof(tmp), "%+9.5f", (double)val);
+  } else {
+    snprintf(tmp, sizeof(tmp), "%+9.6f", (double)val);
   }
-  sent_string[str_length + 1] = terminating_char;
-  CDC_Transmit_FS((uint8_t*)sent_string, str_length + 2);
+  for (int j = 0; j < 9; j++) out[j] = tmp[j];
+}
+
+void write_control_actions(float da, float de, float dth, float dr){
+  static char buf[4 * 9 + 2];
+  char *ptr = buf;
+  *ptr++ = start_char;
+  float vals[4] = {da, de, dth, dr};
+  for (int i = 0; i < 4; i++){
+    format_control_float(vals[i], ptr);
+    ptr += 9;
+  }
+  *ptr++ = terminating_char;
+  CDC_Transmit_FS((uint8_t*)buf, ptr - buf);
 }
 
 int write_ack(void){
-  char acknowledge[2];
+  static char acknowledge[2];
   acknowledge[0]=start_char;acknowledge[1]=terminating_char;
   return (CDC_Transmit_FS((uint8_t*)acknowledge, 2));
 }
 
 void handle_ints(){
+    // this should read the first n_int elements in the buffer
     char buffer[size_int + 1];
     for(int i = 0; i < n_ints; i++){
         for(int j = 0; j < size_int; j++){
@@ -81,10 +101,11 @@ void handle_ints(){
     }
 }
 void handle_floats(){
+    // this should read the first n_floats elements after n_ints
     char buffer[size_float + 1];
     for(int i = 0; i < n_floats; i++){
         for(int j = 0; j < size_float; j++){
-            buffer[j] = str_received[i*size_float + j];
+            buffer[j] = str_received[n_ints*size_int+i*size_float + j];
         }
         buffer[size_float] = '\0';
         input_f[i] = atof(buffer);

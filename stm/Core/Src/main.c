@@ -1,6 +1,9 @@
 #include "main.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
+#include <string.h>
+#include <stdio.h>
+#include "controller.h"
 
 TIM_HandleTypeDef htim1;
 
@@ -9,7 +12,7 @@ uint8_t terminating_char='$';
 uint8_t byte_received;
 uint8_t* rx_rec=&byte_received;
 int input_i[n_ints]={0.0};
-int input_f[n_floats]={0.0};
+float input_f[n_floats]={0.0f};
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -22,6 +25,7 @@ void echo_string();
 void write_string();
 void handle_ints();
 void handle_floats();
+void write_control_actions(float da,float de,float dth, float dr);
 
 int main(void){
 {
@@ -53,8 +57,42 @@ int main(void){
     if(rx_receive(rx_rec) && *rx_rec==start_char){
       HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
       if(read_string()){
-        // handle_ints();
-        echo_string();
+        step++;
+        handle_ints();
+        handle_floats();
+
+        struct autopilot_inputs cmd;
+        cmd.alt_override = input_i[1];
+        cmd.head_override = input_i[2];
+        cmd.ext_controller = input_i[3];
+        cmd.set_pitch = input_f[0];
+        cmd.set_vel = input_f[1];
+        cmd.set_alt = input_f[2];
+        cmd.set_heading = input_f[3];
+        cmd.set_roll = input_f[4];
+
+        float results[9];
+        for (int i = 0; i < 9; i++) results[i] = input_f[5 + i];
+
+        struct flight_path fp;
+        fp.h = input_f[14];
+        fp.v_tot = input_f[15];
+        fp.delta_h_dot = input_f[16];
+        fp.alpha = input_f[17];
+        fp.beta = input_f[18];
+        fp.gamma = input_f[19];
+
+        pitch_controller(results, &cmd);
+        velocity_controller(results, &cmd);
+        alt_controller(&cmd, &fp);
+        if (!cmd.alt_override) {
+            yaw_controller(results, &cmd);
+            roll_controller(results, &cmd);
+        } else {
+            da = 0;
+            dr = 0;
+        }
+        write_control_actions(da, de, dth, dr);
       }
     }
   }

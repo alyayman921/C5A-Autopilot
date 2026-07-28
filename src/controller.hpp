@@ -12,7 +12,7 @@ class controller{
 	private:
 		mySerial SP;
 		char serial_states[256];
-		char received_CA[64]; // Control action
+		char received_CA[256]; // Control action
 		bool Autopiloted;
 		float da,de,dth,dr;
 		Eigen::Matrix<double,4,1>* Controls;
@@ -58,6 +58,7 @@ class controller{
 
 
 	public:
+		int missed_ticks = 0;
 		controller(Eigen::Matrix<double,4,1>* Controls,aircraft_data *ac ,flight_path *str_h ,
 			double dt,int *step,autopilot_inputs *commands ,bool Autopiloted){
 			this->Controls=Controls;
@@ -179,7 +180,7 @@ class controller{
 			}
 
 		}
-// --------------- conv to 9 char Send To Serial
+// --------------- conv floats to 9 char Send To Serial
 
 	// Memory Inefficient Black Majic from the ai, don't @ me 
 void pack_serial_data(char buffer[256]) {
@@ -219,10 +220,11 @@ void pack_serial_data(char buffer[256]) {
 
     // ---- 9 results from state vector (9 × 9 = 81 chars) ----
     for (int i = 0; i < 9; ++i) {
-        append_float((*results)(i));
+        append_float(results[*step](i));
     }
 
-    // ---- 5 flight‑path variables (5 × 9 = 45 chars) ----
+    // ---- 6 flight‑path variables (6 × 9 = 54 chars) ----
+    append_float(str_h->h);
     append_float(str_h->v_tot);
     append_float(str_h->delta_h_dot);
     append_float(str_h->alpha);

@@ -22,7 +22,7 @@
 #ifndef __MAIN_H
 #define __MAIN_H
 #define size_int 1 // char boolean 1 or 0
-#define n_ints 4   // for n bools
+#define n_ints 10  // 4 bools + 6 padding (C++ sends 10 bool chars)
 #define n_floats 20 // then the states
 #define size_float 9 // in received chars
 #define Buffer_Size 256 // actual received without start/term
