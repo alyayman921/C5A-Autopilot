@@ -73,8 +73,8 @@ if a state is to be derived (multiplied by s), for the fisrt time step we set th
 
 ## TODO 
 - [x] Make a Generalized Transfer Function class.
+- [x] Deploy controllers to an stm32 based embedded board.
 - [ ] Attach a rendering GUI for the Simulator.
-- [ ] Deploy controllers to an stm32 based embedded board.
 - [ ] Makefile, maybe publish to AUR?
 
 > [!NOTE]
@@ -86,3 +86,4 @@ if a state is to be derived (multiplied by s), for the fisrt time step we set th
 > [!IMPORTANT]
 > Ai was used in this project to do the logging and the handling of files, it was also used in developing the rk4 solver and linking it to the Rigid Body Dynamics equations.
 > this is a learning project, i'm trying to enhance my C++ skills so there's no point of prompting the ai to do it for me.
+> ai was used too in the STM32 part of the project, to help with the uncharted Drivers territory and do the donkey work that was done before, for example after setting up the communication bridge via USB CDC, ai converted the floats to certain amount of characters to send from the c++ code to stm, you can probably tell whose idea this was, it also implemented the same controllers with the euler method, since it choked on it's own saliva while trying to use the digital controllers.
