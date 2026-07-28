@@ -7,7 +7,7 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 *Dependencies:*
 - [XLSX I/O C library](https://github.com/brechtsanders/xlsxio).
 - C++ Eigen, most likely preinstalled in your distro, can be downloaded and put in the project directory, but you'll have to do some manual renaming in the header files.
-
+- [Libserial](https://github.com/crayzeewulf/libserial), Self Explanatory
 ### **Linux Guide:** 
 [Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/v-1.0/Release.zip)
 Clone This directory & cd inside of it
