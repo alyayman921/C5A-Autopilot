@@ -11,7 +11,7 @@ extern double rad2deg;
 
 class controller{
 	private:
-		mySerial SP;
+		mySerial* SP=nullptr;
 		char serial_states[256];
 		char received_CA[256]; // Control action
 		bool Autopiloted;
@@ -71,7 +71,7 @@ class controller{
 			this->commands=commands;
 			if(commands->ext_controller){
 				std::string sp=getSerialPort();
-	            this->SP= mySerial(sp);
+	            SP=new mySerial(sp);
 			}
 			// Pitch
 			double servo_num=10; double servo_den[2]={10 ,1.0};
@@ -100,6 +100,10 @@ class controller{
 			this->yaw_servo=transferFunction(1 , 2, servo_num, servo_den, step, dt);
 
 			*Controls={0,0,0,0};
+		}
+		~controller(){
+			SP->close();
+			delete SP;
 		}
 		void rk4_pointers(Eigen::Matrix<double, 9, 1>* results){
 			this->results=results; // store a pointer to results vector
@@ -246,14 +250,14 @@ class controller{
 	Eigen::Matrix<double,4,1>* get_controls() { return Controls; }
 	void send_states(){
 		if(commands->ext_controller){
-			if (SP.read_string(received_CA)) {
+			if (SP->read_string(received_CA)) {
 				*Controls = {std::atof(received_CA),
 				             std::atof(received_CA + 9),
 				             std::atof(received_CA + 18),
 				             std::atof(received_CA + 27)};
 			}
 			pack_serial_data(serial_states);
-			SP.write_string(serial_states);
+			SP->write_string(serial_states);
 		}
 	}
 };
