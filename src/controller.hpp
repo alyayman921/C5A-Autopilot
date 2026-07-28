@@ -87,7 +87,7 @@ class controller{
 			this->engine_lag=transferFunction(1 , 2, engine_num, engine_den , step ,dt);
 			// altitude
 			double alt_num[2]={0.011498*0.3709 , 0.011498}; double alt_den[2]={10 ,1.0};
-			this->alt_tf=transferFunction(1 , 2, alt_num, alt_den , step ,dt);
+			this->alt_tf=transferFunction(2 , 2, alt_num, alt_den , step ,dt);
 			// roll
 			double pir_num[2]={0.14722*18,0.14722};double pir_den[2]={0,1};
 			this->PI_Roll=transferFunction(2 , 2, pir_num, pir_den, step, dt);

@@ -14,7 +14,7 @@ class mySerial{
 private:
     uint8_t data_byte;
     char string[Buffer_Size]={0};
-		size_t ms_timeout = 50;
+		size_t ms_timeout = 1;
     SerialPort serial_port;
 
 public:
