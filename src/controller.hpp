@@ -102,8 +102,10 @@ class controller{
 			*Controls={0,0,0,0};
 		}
 		~controller(){
-			SP->close();
-			delete SP;
+			if (SP) {
+				SP->close();
+				delete SP;
+			}
 		}
 		void rk4_pointers(Eigen::Matrix<double, 9, 1>* results){
 			this->results=results; // store a pointer to results vector

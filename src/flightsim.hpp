@@ -19,9 +19,7 @@ struct autopilot_inputs{
 autopilot_inputs commands;
 
 struct flight_path{
-    // make the h value the one gotten from xlsx, 
-    double h=40000,v_tot,delta_h_dot,alpha,beta,gamma; 
-    //also this is not the place to define it
+    double h=40000,v_tot=0,delta_h_dot=0,alpha=0,beta=0,gamma=0;
 };
 flight_path str_h;
 int step=0;
@@ -34,7 +32,7 @@ int* ptrStep=&step;
 #include "controller.hpp"
 // Variables to be read from controls file
 double tfinal;
-bool loop;
+bool loop = false;
 const char filename[] = "meta/C5A.xlsx";
 Eigen::Matrix<double, 4, 1> Controls;
 bool Autopiloted=true;

@@ -23,7 +23,7 @@ inline void handling(int row,char current_cell[],double doubleed[]){
 
 
 inline raw_data readxlsx(const char *filename) {
-    raw_data data;
+    raw_data data = {};
 
     xlsxioreader xlsxioread;
     xlsxioreadersheet sheet;

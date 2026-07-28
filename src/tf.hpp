@@ -4,7 +4,7 @@ class transferFunction{
 	private:
 		double a0,a1; // Numerator coefficients, where the polynomial has the coefficients (a1*s + a0)
 		double b0,b1; // denum coefficients
-		double diffed,dt,y,yd,rd;
+		double diffed=0,dt=0,y=0,yd=0,rd=0;
 		int* step;
 		int size_num,size_denum; 
 
