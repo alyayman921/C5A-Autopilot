@@ -108,5 +108,9 @@ class transferFunction{
 			}
 		}
 
+		void clamp_state(double min, double max){
+			if (y < min) y = min;
+			if (y > max) y = max;
+		}
 
 };

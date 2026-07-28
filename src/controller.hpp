@@ -81,6 +81,9 @@ class controller{
 			double vel_num[2]={125.2,1549.1}; double vel_den[2]={0.0 ,1.0};
 			double engine_num=0.1; double engine_den[2]={0.1 ,1.0};
 			this->vel_tf=transferFunction(2 , 2, vel_num, vel_den , step ,dt);
+			double throttle_den[2]={10 ,1.0};
+			this->throttle_valve=transferFunction(1 , 2, 10.0, throttle_den , step ,dt);
+			this->engine_lag=transferFunction(1 , 2, engine_num, engine_den , step ,dt);
 			// altitude
 			double alt_num[2]={0.011498*0.3709 , 0.011498}; double alt_den[2]={10 ,1.0};
 			this->alt_tf=transferFunction(1 , 2, alt_num, alt_den , step ,dt);
@@ -136,8 +139,8 @@ class controller{
 				y_vel=vel_tf.solve(((commands->set_vel)-results[*step][0]));
 				dth=throttle_valve.solve(y_vel);
 				dth=engine_lag.solve(dth);
-				if (dth>dth_max){dth=dth_max;}
-				if (dth<dth_min){dth=dth_min;}
+				if (dth>dth_max){dth=dth_max; vel_tf.clamp_state(dth_min, dth_max);}
+				if (dth<dth_min){dth=dth_min; vel_tf.clamp_state(dth_min, dth_max);}
 				*Controls={da,de,dth,dr};
 				//std::cout<<"current Thrust"<<dth<<"\n";
 			}
@@ -172,8 +175,8 @@ class controller{
 			*/
 			if(Autopiloted&&!(commands->head_override)&&!(commands->ext_controller)){
 				coordinated_roll=((commands->set_heading)-results[*step][8])*(results[0][0])/ac->g/10;
-				if (coordinated_roll>25){coordinated_roll=25;}
-				if (coordinated_roll<-25){coordinated_roll=-25;}
+			if (coordinated_roll>25*deg2rad){coordinated_roll=25*deg2rad;}
+			if (coordinated_roll<-25*deg2rad){coordinated_roll=-25*deg2rad;}
 				commands->set_roll=coordinated_roll;
 				//roll_controller();
 				dr=yaw_damper.solve(results[*step][5]);

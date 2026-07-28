@@ -135,12 +135,12 @@ class rk4{
                 state_history[*step + 1] = y;
                 
                 // update the controllers after solving
-                con_obj.send_states();
                 con_obj.pitch_controller();
                 con_obj.velocity_controller();
                 con_obj.altitude_controller();
                 con_obj.roll_controller();
                 con_obj.yaw_controller();
+                con_obj.send_states();
                 
                 // Log data at this timestep
                 double current_time = (*step + 1) * dt;
