@@ -3,6 +3,9 @@ as a continuation to the AER4420 Course in my Final year of aerospace engineerin
 during the course i was tasked to create an autopilot system for the Lockheed Martin's C5A Aircraft using Matlab/Simulink, this is C++ implementation for the same linearized aircraft dynamics around a certain flight condition with the same controllers. 
 [Linkedin 1/3](https://www.linkedin.com/posts/3lymn_autopilot-13-model-based-development-of-ugcPost-7483422524295442432-yo6z/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAD8q71sBYWkieo0AnWkqPzl4N3JYOQFtBKU) [Linkedin 2/3](https://www.linkedin.com/posts/3lymn_autopilot-23-%F0%9D%9F%AD%F0%9D%9F%AE%F0%9D%98%85-%F0%9D%97%A7%F0%9D%97%B5%F0%9D%97%B2-%F0%9D%97%A3%F0%9D%97%B2%F0%9D%97%BF%F0%9D%97%B3%F0%9D%97%BC%F0%9D%97%BF%F0%9D%97%BA%F0%9D%97%AE%F0%9D%97%BB%F0%9D%97%B0%F0%9D%97%B2-ugcPost-7484514915890663424-gycB/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAD8q71sBYWkieo0AnWkqPzl4N3JYOQFtBKU)
 
+
+![Release 1.41](Documentation/V1.41/Release1.41.gif)
+
 ## Build From Source 
 *Dependencies:*
 - [XLSX I/O C library](https://github.com/brechtsanders/xlsxio).
