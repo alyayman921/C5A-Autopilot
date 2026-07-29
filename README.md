@@ -10,11 +10,16 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 - [Libserial](https://github.com/crayzeewulf/libserial), Self Explanatory, not available for windows.
 ## **Windows Guide**
 1st of all, glad i found the last windows user alive
-Serial Library is not for windows, so throw that STM32 away
-[Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.41/Release_Windows_x64.zip)
 
-### **Linux Guide:** 
-[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/v-1.41/Release.zip)
+Serial Library is not for windows, so throw that STM32 away
+
+[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.41/Release_Windows_x64.zip)
+
+## **Linux Guide:** 
+[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.41/Release_Linux_x64.zip)
+
+**or for better performance**
+
 Clone This directory & cd inside of it
 ```bash
 git clone https://github.com/alyayman921/Cpp-Flight-Simulator.git && cd Cpp-Flight-Simulator
