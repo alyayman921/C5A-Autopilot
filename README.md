@@ -7,9 +7,14 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 *Dependencies:*
 - [XLSX I/O C library](https://github.com/brechtsanders/xlsxio).
 - C++ Eigen, most likely preinstalled in your distro, can be downloaded and put in the project directory, but you'll have to do some manual renaming in the header files.
-- [Libserial](https://github.com/crayzeewulf/libserial), Self Explanatory
+- [Libserial](https://github.com/crayzeewulf/libserial), Self Explanatory, not available for windows.
+## **Windows Guide**
+1st of all, glad i found the last windows user alive
+Serial Library is not for windows, so throw that STM32 away
+[Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.41/Release_Windows_x64.zip)
+
 ### **Linux Guide:** 
-[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/v-1.0/Release.zip)
+[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/v-1.41/Release.zip)
 Clone This directory & cd inside of it
 ```bash
 git clone https://github.com/alyayman921/Cpp-Flight-Simulator.git && cd Cpp-Flight-Simulator
@@ -23,9 +28,6 @@ sudo apt update && sudo apt install libeigen3-dev # or install via your distro's
 **Clone and make Dependancies**
 ```bash
 git clone https://github.com/brechtsanders/xlsxio.git && cd xlsx*
-```
-
-```bash 
 # From Inside xlsxio folder
 cmake -G"Unix Makefiles" .
 make
@@ -35,16 +37,22 @@ cd ../
 ```
 
 **Compiling**
+either do 
+
+```bash
+make clean
+make
+cp -r meta/ Release/Release_Linux_x64
+```
+
+or
 ```bash
 # Back in the Main folder
-g++ flightsim.cpp -o FlightSimulator -I/usr/include/eigen3 -lm -lxlsxio_read -lserial
+g++ flightsim.cpp -o FlightSimulator -DUSE_SERIAL -I/usr/include/eigen3 -lm -lxlsxio_read -lserial
 ```
 
 The release binaries are compiled with gcc-9 to ensure compatibility, since my arch uses gcc16.1, on Ubuntu you'd have to wait 2 years or so to catch up with this version of c++ libraries
 
-```bash
-g++-9 -std=c++17 flightsim.cpp -o FlightSimulator -I/usr/include/eigen3 -Wl,-Bstatic -lxlsxio_read -L/usr/local/lib -lserial -Wl,-Bdynamic  -lexpat -lminizip -lz -lm
-```
 
 **Run with --help and get started**
 ```bash

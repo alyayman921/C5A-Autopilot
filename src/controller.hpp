@@ -2,18 +2,21 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <cstdlib>
-#include "serial.hpp"
-#include "tf.hpp"
+#ifdef USE_SERIAL
 #include "serial.hpp"
 #include "serial_scanner.hpp"
+#endif
+#include "tf.hpp"
 extern double deg2rad;
 extern double rad2deg;
 
 class controller{
 	private:
+#ifdef USE_SERIAL
 		mySerial* SP=nullptr;
 		char serial_states[256];
 		char received_CA[256]; // Control action
+#endif
 		bool Autopiloted;
 		float da,de,dth,dr;
 		Eigen::Matrix<double,4,1>* Controls;
@@ -69,10 +72,12 @@ class controller{
 			this->step=step;
 			this->ac=ac;
 			this->commands=commands;
+#ifdef USE_SERIAL
 			if(commands->ext_controller){
 				std::string sp=getSerialPort();
 	            SP=new mySerial(sp);
 			}
+#endif
 			// Pitch
 			double servo_num=10; double servo_den[2]={10 ,1.0};
 			double pitch_num=1.9948; double pitch_den[2]={0.0 ,1.0};
@@ -102,10 +107,12 @@ class controller{
 			*Controls={0,0,0,0};
 		}
 		~controller(){
+#ifdef USE_SERIAL
 			if (SP) {
 				SP->close();
 				delete SP;
 			}
+#endif
 		}
 		void rk4_pointers(Eigen::Matrix<double, 9, 1>* results){
 			this->results=results; // store a pointer to results vector
@@ -251,6 +258,7 @@ class controller{
 	}
 	Eigen::Matrix<double,4,1>* get_controls() { return Controls; }
 	void send_states(){
+#ifdef USE_SERIAL
 		if(commands->ext_controller){
 			if (SP->read_string(received_CA)) {
 				*Controls = {std::atof(received_CA),
@@ -261,5 +269,6 @@ class controller{
 			pack_serial_data(serial_states);
 			SP->write_string(serial_states);
 		}
+#endif
 	}
 };
