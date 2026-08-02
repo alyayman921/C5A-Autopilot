@@ -5,7 +5,6 @@ int main(int argc, char* argv[]) {
     // Read aircraft data
     raw_data raw = readxlsx(filename);
     aircraft_data c5a = sorting(raw);
-
     // Input handling
     if (argc >= 2){
         std::string arg = argv[1];
@@ -13,14 +12,14 @@ int main(int argc, char* argv[]) {
             std::cout<< "\nFlight Simulator for Lockheed Martin's C5A Aircraft\n";
             std::cout<< "Run the Simulator with the supported input arguments like \"./FlightSim --arg\n";
             std::cout<< "Run the Simulator with no arguments for normal usage \n\n";
-            std::cout<<"Arguments    Usage\n";
-            std::cout<<"---------    ---------------------------------------------------------\n";
-            std::cout<<"--help       print this message\n";
-            std::cout<<"--ext        use external Micorcontroller as aircraft controller\n";
-            std::cout<<"--loop       prevent the program from exiting after solving\n";
-            std::cout<<"--manual     read the control commands from the textfile controls.txt\n";
-            std::cout<<"--pitch      overrides altitude loop straight to pitch control\n";
-            std::cout<<"--roll       overrides heading loop straight to roll control\n";
+            std::cout<< "Arguments    Usage\n";
+            std::cout<< "---------    ---------------------------------------------------------\n";
+            std::cout<< "--help       print this message\n";
+            std::cout<< "--ext        use external Micorcontroller as aircraft controller\n";
+            std::cout<< "--loop       prevent the program from exiting after solving\n";
+            std::cout<< "--manual     read the control commands from the textfile controls.txt\n";
+            std::cout<< "--pitch      overrides altitude loop straight to pitch control\n";
+            std::cout<< "--roll       overrides heading loop straight to roll control\n";
             return 0;
         }
         for(int i=0;i<argc;i++){
@@ -45,7 +44,6 @@ int main(int argc, char* argv[]) {
                 std::cout<<"External Controller\n";
                 commands.ext_controller = true;
             }
-
         }
     }
         if(commands.alt_override){
@@ -74,7 +72,7 @@ int main(int argc, char* argv[]) {
         Controls << 0.0, 0.0, 1000.0, 0.05;
         dt = 0.01;
         tfinal = 100.0;
-    }   
+    }
     if (!Autopiloted){std::cout << "Controls loaded: " << Controls.transpose() << std::endl;}
     std::cout << "Timestep: " << dt << " s" << std::endl;
     std::cout << "Final time: " << tfinal << " s" << std::endl;
@@ -93,7 +91,7 @@ int main(int argc, char* argv[]) {
     initial_state << c5a.V0(0), c5a.V0(1), c5a.V0(2),
                       c5a.omega0(0), c5a.omega0(1), c5a.omega0(2),
                       c5a.euler0(0), c5a.euler0(1), c5a.euler0(2);
-    
+
     // Begin Solving
     auto prev =std::chrono::steady_clock::now();
     Eigen::Matrix<double, 9, 1>* results = rk4Solver.rk4_solver(RBD,c, str_h, initial_state);
@@ -107,14 +105,16 @@ int main(int argc, char* argv[]) {
     //          << final_state(3) << ", " << final_state(4) << ", " << final_state(5) << std::endl;
     std::cout << "Euler angles in Degrees (phi, theta, psi): "
               << (float)final_state(6)*rad2deg << ", " << (float)final_state(7)*rad2deg << ", " << (float)final_state(8)*rad2deg << std::endl;
-    std::cout << "Final Altitude: "<<str_h.h<<"\n"; 
+    std::cout << "Final Altitude: "<<str_h.h<<"\n";
     if (!final_state.allFinite()) {
         std::cerr << "\nWarning: final state contains NaN/Inf - simulation diverged." << std::endl;
     }
-    
-    
+
+
 #ifdef USE_SERIAL
+    if (commands.ext_controller){
         std::cout << "Missed serial ticks: " << c.missed_ticks << "/" << (int)(tfinal / dt) << "\n";
+    }
 #endif
     auto now =std::chrono::steady_clock::now();
     const std::chrono::duration<double> elapsed_seconds{now-prev};

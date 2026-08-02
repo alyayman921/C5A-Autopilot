@@ -7,7 +7,7 @@
 
 TIM_HandleTypeDef htim1;
 
-uint8_t start_char='!';
+uint8_t thisbnigger='!';
 uint8_t terminating_char='$';
 uint8_t byte_received;
 uint8_t* rx_rec=&byte_received;
@@ -90,8 +90,7 @@ int main(void){
 
         pitch_controller(results, &cmd);
         velocity_controller(results, &cmd);
-        
-          if (!cmd.head_override) {
+        if (!cmd.head_override) {
             yaw_controller(results, &cmd);
           }
         roll_controller(results, &cmd);

@@ -13,7 +13,6 @@ class rk4{
         int N_steps;
         int *step;
         double *time_v;
-        
         // Loggers
         DataLogger stateLogger;
         DataLogger forceLogger;
@@ -37,31 +36,26 @@ class rk4{
                 time_v[i] = i * dt;
             }
         }
-        
         ~rk4() {
             // Loggers will be closed automatically by their destructors
         }
-        
         void initializeLoggers() {
             if (loggersInitialized) return;
-            
             // Initialize state logger
             stateLogger.init("states");
             std::vector<std::string> stateHeaders = {
                 "time", "vx", "vy", "vz", "p", "q", "r", "phi", "theta", "psi"
             };
             stateLogger.writeHeader(stateHeaders);
-            
             // Initialize force logger
             forceLogger.init("forces");
             std::vector<std::string> forceHeaders = {
-                "time", 
+                "time",
                 "F_aero_x", "F_aero_y", "F_aero_z",
                 "F_grav_x", "F_grav_y", "F_grav_z",
                 "F_total_x", "F_total_y", "F_total_z"
             };
             forceLogger.writeHeader(forceHeaders);
-            
             // Initialize aerodynamic acceleration logger
             accelLogger.init("aerodynamic_accel");
             std::vector<std::string> accelHeaders = {
@@ -139,7 +133,6 @@ class rk4{
 
                 // Store state
                 state_history[*step + 1] = y;
-                
                 // update the controllers after solving
                 con_obj.pitch_controller();
                 con_obj.velocity_controller();
@@ -147,15 +140,14 @@ class rk4{
                 con_obj.roll_controller();
                 con_obj.yaw_controller();
                 con_obj.send_states();
-                
                 // Log data at this timestep
                 double current_time = (*step + 1) * dt;
                 if (logging){
 
                 stateLogger.logStates(current_time, y);
-                forceLogger.logForces(current_time, 
-                                     RBDobj.getAeroForces(), 
-                                     RBDobj.getGravForces(), 
+                forceLogger.logForces(current_time,
+                                     RBDobj.getAeroForces(),
+                                     RBDobj.getGravForces(),
                                      RBDobj.getTotalForces());
                 accelLogger.logWithTime(current_time, RBDobj.getAerodynamicAccel());
                 momentLogger.logMoments(current_time, RBDobj.getTotalMoments());

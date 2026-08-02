@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <iostream>
-#include "derivatives.hpp" 
+#include "derivatives.hpp"
 
 //float eps = 0.00000011921; // matlab float eps
 double eps = 0.000000000000000222044605;
@@ -35,7 +35,6 @@ class RBDsolve{
         Eigen::Matrix<double,3,1> F_g0;
         Eigen::Matrix<double,3,1> F_g;
         Eigen::Matrix<double,3,1> M_total;
-        
         RBDsolve(aircraft_data &ac, Eigen::Matrix<double,4,1>* Controls,bool Autopiloted){
                 this->ac = ac; this->g = ac.g; this->m = ac.m; this->I = ac.Inertia;this->z0=ac.z0;
                 this->F_g0 = ac.mg0; this->v = ac.V0;
@@ -50,7 +49,6 @@ class RBDsolve{
                 F_b.setZero();
                 M_total.setZero();
         }
-        
         // Getters for logging
         Eigen::Matrix<double,6,1> getAerodynamicAccel() const { return Aerodynamic_accel; }
         Eigen::Matrix<double,3,1> getAeroForces() const { return F_aero; }
@@ -108,7 +106,6 @@ class RBDsolve{
                 delta_F[i] = Aerodynamic_accel[i] * m;
                 F_aero[i] = delta_F[i];  // Store aerodynamic forces
             }
-            
             // Compute moments
             for (i = 3; i < 6; i++){
                 delta_M[i-3] = Aerodynamic_accel[i] * I.coeff(i-3, i-3);
@@ -181,9 +178,7 @@ class RBDsolve{
             str_h.h+=dt*str_h.delta_h_dot;
             //std::cout<<"current H"<<str_h.h<<" "<< "Current h_dot" <<str_h.delta_h_dot<<std::endl;
         }
-        
 
-        
     private:
         double current_time;  // Store current time for logging
 };
