@@ -16,6 +16,7 @@ int main(int argc, char* argv[]) {
             std::cout<< "---------    ---------------------------------------------------------\n";
             std::cout<< "--help       print this message\n";
             std::cout<< "--ext        use external Micorcontroller as aircraft controller\n";
+            std::cout<< "--lin        switch to linear statespace simulator\n";
             std::cout<< "--loop       prevent the program from exiting after solving\n";
             std::cout<< "--manual     read the control commands from the textfile controls.txt\n";
             std::cout<< "--pitch      overrides altitude loop straight to pitch control\n";
@@ -43,6 +44,10 @@ int main(int argc, char* argv[]) {
             if (arg == "--ext") {
                 std::cout<<"External Controller\n";
                 commands.ext_controller = true;
+            }
+            if (arg == "--lin") {
+                std::cout<<"Linear Simulator\n";
+                commands.linear= true;
             }
         }
     }
@@ -78,25 +83,34 @@ int main(int argc, char* argv[]) {
     std::cout << "Final time: " << tfinal << " s" << std::endl;
     std::cout << "Number of steps: " << (int)(tfinal / dt) << std::endl;
 
-    // Initialize the controller
-    controller c(&Controls,&c5a, &str_h,dt,&step,&commands,Autopiloted);
-    RBDsolve RBD(c5a, &Controls,Autopiloted);
-
-    // Setup and run RK4 integration
-    rk4 rk4Solver(dt, tfinal,&step,logging);
-    rk4Solver.resultsPointer(c);
-
     // Initial state vector: [uvw, pqr, euler(3)]
     Eigen::Matrix<double, 9, 1> initial_state;
     initial_state << c5a.V0(0), c5a.V0(1), c5a.V0(2),
                       c5a.omega0(0), c5a.omega0(1), c5a.omega0(2),
                       c5a.euler0(0), c5a.euler0(1), c5a.euler0(2);
-
-    // Begin Solving
-    auto prev =std::chrono::steady_clock::now();
-    Eigen::Matrix<double, 9, 1>* results = rk4Solver.rk4_solver(RBD,c, str_h, initial_state);
     int N_steps = (int)(tfinal / dt);
-    Eigen::Matrix<double, 9, 1> final_state = results[N_steps];
+    Eigen::Matrix<double, 9, 1> final_state;
+    final_state<<0,0,0,0,0,0,0,0,0;
+    Eigen::Matrix<double,9,1>*results=nullptr;
+    // Initialize the controller
+    controller c(&Controls,&c5a, &str_h,dt,&step,&commands,Autopiloted);
+    auto prev =std::chrono::steady_clock::now();
+    // Setup and run RK4 integration for nonlinear simulator
+    if (commands.linear){
+      fullLinear l(&Controls,&c5a, &str_h,dt,&step,&commands,initial_state,&c,Autopiloted);
+      results=l.solve(N_steps);
+      std::cout<<"Trying to access Results vector\n";
+      final_state = results[N_steps];
+      std::cout<<"Trying to access Results vector\n";
+      l.free();
+    }else{
+      rk4 rk4Solver(dt, tfinal,&step,logging);
+      rk4Solver.resultsPointer(c);
+      RBDsolve RBD(c5a, &Controls,Autopiloted);
+      results = rk4Solver.rk4_solver(RBD,c, str_h, initial_state);
+      final_state = results[N_steps];
+      rk4Solver.free_results();
+    }
 
     std::cout << "\n=== Final State (t=" << tfinal << "s) ===" << std::endl;
     std::cout << "Velocity ft/s (v_x, v_y, v_z): "
@@ -122,7 +136,6 @@ int main(int argc, char* argv[]) {
     float RTF = (double)tfinal/elapsed_seconds.count();
     std::cout<<"Simulation Finished in "<<elapsed<<" With a RTF " <<RTF<<std::endl;
 
-    rk4Solver.free_results();
     if (loop){
         std::cout<<"Press Ctrl+C to Exit\n";
         std::cin >> dt;

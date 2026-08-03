@@ -30,7 +30,7 @@ class controller{
 		autopilot_inputs *commands;
 
 		// Pitch Controller
-		double y_pitch=0.0,yd_pitch=0.0; 
+		double y_pitch=0.0,yd_pitch=0.0;
 		float de_max=  25 * deg2rad;
 		float de_min= -25 * deg2rad;
 		transferFunction pitch_tf;
@@ -55,7 +55,7 @@ class controller{
 		transferFunction PD_Roll;
 		transferFunction roll_servo;
 
-		// Heading Controller 
+		// Heading Controller
 		double coordinated_roll=0.0;
 		transferFunction yaw_damper;
 		transferFunction yaw_servo;
@@ -118,6 +118,11 @@ class controller{
 			this->results=results; // store a pointer to results vector
 		}
 
+		void linear_pointers(Eigen::Matrix<double, 9, 1>* results){
+			this->results=results; // store a pointer to results vector
+      std::cout<<"Linearized Pointer Passed to Controller\n";
+		}
+
 		void pitch_controller(){
 
 			if (Autopiloted&&!(commands->ext_controller)){
@@ -130,7 +135,7 @@ class controller{
 				*Controls={da,de,dth,dr};
 				}
 			}
-		
+
 		void altitude_controller(){
 			/*
 			    0.011498 (s+0.3709)
@@ -160,19 +165,19 @@ class controller{
 			}
 		}
 // -------------------------------------- LATERAL CONTROLLERS ---------------------------------------
-		
+
 		void roll_controller(){
 			/*
-			     PI_Roll 
+			     PI_Roll
 			  0.14722 (s+18)
-			  -------------- 
+			  --------------
 			        s
 
 				  PD_Roll
 			  121.15 (s+1.3)
 			  --------------
 			      (s+15)
- 
+
 			*/
 			if(Autopiloted&&!(commands->ext_controller)){
 				da=PI_Roll.solve(((commands->set_roll)-results[*step][6]))-PD_Roll.solve(results[*step][6]);
@@ -201,7 +206,7 @@ class controller{
 		}
 // --------------- conv floats to 9 char Send To Serial
 
-	// Memory Inefficient Black Majic from the ai, don't @ me 
+	// Memory Inefficient Black Majic from the ai, don't @ me
 	void pack_serial_data(char buffer[256]) {
 	    char *ptr = buffer;
 
@@ -220,10 +225,10 @@ class controller{
 	        // Clamp to ±99999.99
 	        if (val > 99999.99) val = 99999.99;
 	        if (val < -99999.99) val = -99999.99;
-	        
+
 	        char buf[15];
 	        snprintf(buf, sizeof(buf), "%+09.2f", val);
-	        
+
 	        // buf is now exactly 9 chars: "+0000.00" or "-99999.99"
 	        for (int i = 0; i < 9; i++) {
 	            *ptr++ = buf[i];
