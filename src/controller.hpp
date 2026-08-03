@@ -120,7 +120,8 @@ class controller{
 
 		void linear_pointers(Eigen::Matrix<double, 9, 1>* results){
 			this->results=results; // store a pointer to results vector
-      std::cout<<"Linearized Pointer Passed to Controller\n";
+      // std::cout<<"Linearized Pointer Passed to Controller\n";
+      // std::cout<<"Address for Results"<<results<<'\n';
 		}
 
 		void pitch_controller(){

@@ -99,9 +99,7 @@ int main(int argc, char* argv[]) {
     if (commands.linear){
       fullLinear l(&Controls,&c5a, &str_h,dt,&step,&commands,initial_state,&c,Autopiloted);
       results=l.solve(N_steps);
-      std::cout<<"Trying to access Results vector\n";
       final_state = results[N_steps];
-      std::cout<<"Trying to access Results vector\n";
       l.free();
     }else{
       rk4 rk4Solver(dt, tfinal,&step,logging);
