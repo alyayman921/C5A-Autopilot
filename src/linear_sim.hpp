@@ -1,5 +1,7 @@
 #pragma once
 // THIS IS MADE IN NEOVIM, LEARNING THROUGH BLOOD, SWEAT AND TEARS
+// you have to fix the str_h, since it's calculated in rbdequations which aren't used here
+// also find out why the control actions don't change, is the states vector being passed correctly?
 #include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -62,9 +64,13 @@ class fullLinear{
       state_history=new Eigen::Matrix<double,9,1>[n_steps];
       state_history[0]=initial_state;
       Eigen::Matrix<double,2,1> select_lat;
-      Eigen::Matrix<double,9,1> yd;
+      Eigen::Matrix<double,9,1> yd,y;
+      yd<<0,0,0,0,0,0,0,0,0; y=yd;
       resultsPointer();
       for(int i=1;i<=n_steps;i++){
+        y=yd*dt;
+        lsh.x_long<<y[0],y[1],y[2],y[3];
+        lsh.x_lat<<y[4],y[5],y[6],y[7],y[8];
         select_lat[0]=(*Controls)[0];
         select_lat[1]=(*Controls)[3];
         lsh.xd_long=A_Long*lsh.x_long+B_Long* (*Controls).segment(1,2);
@@ -72,7 +78,7 @@ class fullLinear{
         yd<<lsh.xd_long[0],lsh.xd_lat[0],lsh.xd_long[1],
             lsh.xd_lat[1],lsh.xd_long[2],lsh.xd_lat[2],
             lsh.xd_lat[3],lsh.xd_long[3],lsh.xd_lat[4];
-        state_history[i]=state_history[i-1]+dt*yd;
+        state_history[i]=state_history[i-1]+y;
         if(Autopiloted){
           con_obj->pitch_controller();
           con_obj->velocity_controller();
