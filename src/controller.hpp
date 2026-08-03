@@ -49,14 +49,16 @@ class controller{
 		transferFunction alt_tf;
 
 		// Roll Controller
-		float da_max=     25 * deg2rad;
-		float da_min=    -25 * deg2rad;
+		float da_max=     50 * deg2rad;
+		float da_min=    -50 * deg2rad;
 		transferFunction PI_Roll;
 		transferFunction PD_Roll;
 		transferFunction roll_servo;
 
 		// Heading Controller
 		double coordinated_roll=0.0;
+		float dr_max=      15 * deg2rad;
+		float dr_min=     -15 * deg2rad;
 		transferFunction yaw_damper;
 		transferFunction yaw_servo;
 
@@ -183,6 +185,8 @@ class controller{
 			if(Autopiloted&&!(commands->ext_controller)){
 				da=PI_Roll.solve(((commands->set_roll)-results[*step][6]))-PD_Roll.solve(results[*step][6]);
 				da=roll_servo.solve(da);
+				if (da>da_max){da=da_max;}
+				if (da<da_min){da=da_min;}
 				*Controls={da,de,dth,dr};
 			}
 		}
@@ -201,6 +205,8 @@ class controller{
 				//roll_controller();
 				dr=yaw_damper.solve(results[*step][5]);
 				dr=yaw_servo.solve(dr);
+				if (dr>dr_max){dr=dr_max;}
+				if (dr<dr_min){dr=dr_min;}
 				*Controls={da,de,dth,dr};
 			}
 

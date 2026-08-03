@@ -26,7 +26,7 @@ class fullLinear{
     Eigen::Matrix<double,9,1>* state_history=nullptr;
     controller *con_obj;
     Eigen::Matrix<double,2,1> select_lat;
-    Eigen::Matrix<double,9,1> yd,y;
+    Eigen::Matrix<double,9,1> yd;
  public:
     fullLinear(Eigen::Matrix<double,4,1>* Controls,aircraft_data *ac ,flight_path *str_h ,
 			double dt,int *step,autopilot_inputs *commands, Eigen::Matrix<double,9,1>initial_state, controller *con_obj,bool Autopiloted){
@@ -63,18 +63,14 @@ class fullLinear{
     }
 
     Eigen::Matrix<double,9,1>* solve(int n_steps){
-      state_history=new Eigen::Matrix<double,9,1>[n_steps];
-      std::cout<<"Command alt"<<commands->set_alt<<"\n";
-      std::cout<<"Command head"<<commands->set_heading<<"\n";
-      // std::cout<<"Command alt"<<commands->set_alt<<"\n";
-      // std::cout<<"Command alt"<<commands->set_alt<<"\n";
+      state_history=new Eigen::Matrix<double,9,1>[n_steps+1];
       state_history[0]=initial_state;
-      yd<<0,0,0,0,0,0,0,0,0; y=yd;
+      yd<<0,0,0,0,0,0,0,0,0;
       resultsPointer();
       for(*step =1;*step<=n_steps;(*step)++){
-        y=yd*dt;
-        lsh.x_long<<y[0],y[1],y[2],y[3];
-        lsh.x_lat<<y[4],y[5],y[6],y[7],y[8];
+        Eigen::Matrix<double,9,1> delta_state=state_history[*step-1]-initial_state;
+        lsh.x_long<<delta_state[0],delta_state[2],delta_state[4],delta_state[7];
+        lsh.x_lat<<delta_state[1],delta_state[3],delta_state[5],delta_state[6],delta_state[8];
         select_lat[0]=(*Controls)[0];
         select_lat[1]=(*Controls)[3];
         lsh.xd_long=A_Long*lsh.x_long+B_Long* (*Controls).segment(1,2);
@@ -82,8 +78,8 @@ class fullLinear{
         yd<<lsh.xd_long[0],lsh.xd_lat[0],lsh.xd_long[1],
             lsh.xd_lat[1],lsh.xd_long[2],lsh.xd_lat[2],
             lsh.xd_lat[3],lsh.xd_long[3],lsh.xd_lat[4];
-        state_history[*step]=state_history[*step-1]+y;
-        h_calculation();
+        state_history[*step]=state_history[*step-1]+yd*dt;
+        h_calculation(state_history[*step]);
         if(Autopiloted){
           con_obj->pitch_controller();
           con_obj->velocity_controller();
@@ -97,21 +93,16 @@ class fullLinear{
       std::cout<<"Solving Finished\n";
       return state_history;
     }
-    void h_calculation(){
-        str_h->alpha=std::atan2(y(2),y(0));
-        //std::cout<<"alpha = "<< str_h->alpha<<std::endl;
-        str_h->v_tot=std::hypot(y(0),y(2));
-        str_h->beta=std::atan2(y(1),str_h->v_tot);
-        //std::cout<<"v_tot = "<< str_h->v_tot<<std::endl;
-        str_h->gamma=y(7)-str_h->alpha;
-        //std::cout<<"gamma = "<< str_h->gamma<<std::endl;
+    void h_calculation(Eigen::Matrix<double,9,1> state){
+        str_h->alpha=std::atan2(state(2),state(0));
+        str_h->v_tot=std::hypot(state(0),state(2));
+        str_h->beta=std::atan2(state(1),str_h->v_tot);
+        str_h->gamma=state(7)-str_h->alpha;
         str_h->delta_h_dot=str_h->v_tot*std::sin(str_h->gamma);
-        //std::cout<<"h dot ="<< str_h->delta_h_dot<<std::endl;
         str_h->h+=dt*str_h->delta_h_dot;
-        //std::cout<<"current H"<<str_h->h<<" "<< "Current h_dot" <<str_h->delta_h_dot<<std::endl;
     }
     void free(){
-      delete state_history;
+      delete[] state_history;
     }
 };
 
