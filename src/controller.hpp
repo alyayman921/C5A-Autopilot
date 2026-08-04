@@ -1,4 +1,5 @@
 #pragma once
+#include "flightsim.hpp"
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <cstdlib>
@@ -78,6 +79,7 @@ class controller{
 			if(commands->ext_controller){
 				std::string sp=getSerialPort();
 	            SP=new mySerial(sp);
+            std::cout<<"Connected to Port\n";
 			}
 #endif
 			// Pitch

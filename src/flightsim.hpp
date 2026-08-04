@@ -23,6 +23,7 @@ autopilot_inputs commands;
 struct flight_path{
     double h=40000,v_tot=0,delta_h_dot=0,alpha=0,beta=0,gamma=0;
 };
+
 flight_path str_h;
 int step=0;
 int* ptrStep=&step;

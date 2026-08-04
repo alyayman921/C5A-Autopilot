@@ -70,7 +70,7 @@ public:
                             // std::cout<<"Success"<<std::endl;
                             return 1; // success, found $ and string finished
                         }
-                        }while(i<Buffer_Size); //it was buffer+1, but might be buffer overflow 
+                        }while(i<Buffer_Size); //it was buffer+1, but might be buffer overflow
                         // check later
                     }
             return 0;
@@ -99,5 +99,4 @@ public:
         }
         return data_byte;
     }
-    
 };

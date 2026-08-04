@@ -1,5 +1,5 @@
 #pragma once
-
+#include "flightsim.hpp"
 #include <cmath>
 #include <cstdlib>
 #include "RBDEqns.hpp"

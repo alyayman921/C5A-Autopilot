@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
         if (arg == "--help") {
             std::cout<< "\nFlight Simulator for Lockheed Martin's C5A Aircraft\n";
             std::cout<< "Run the Simulator with the supported input arguments like \"./FlightSim --arg\n";
-            std::cout<< "Run the Simulator with no arguments for normal usage \n\n";
+            std::cout<< "\n";
             std::cout<< "Arguments    Usage\n";
             std::cout<< "---------    ---------------------------------------------------------\n";
             std::cout<< "--help       print this message\n";
@@ -45,10 +45,10 @@ int main(int argc, char* argv[]) {
                 std::cout<<"External Controller\n";
                 commands.ext_controller = true;
             }
-            if (arg == "--lin") {
-                std::cout<<"Linear Simulator\n";
-                commands.linear= true;
-            }
+            // if (arg == "--lin") {
+            //     std::cout<<"Linear Simulator\n";
+            //     commands.linear= true;
+            // }
         }
     }
         if(commands.alt_override){

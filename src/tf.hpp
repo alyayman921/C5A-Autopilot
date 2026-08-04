@@ -6,7 +6,7 @@ class transferFunction{
 		double b0,b1; // denum coefficients
 		double diffed=0,dt=0,y=0,yd=0,rd=0;
 		int* step;
-		int size_num,size_denum; 
+		int size_num,size_denum;
 
 		struct prev_store{
 			double state=0.0;
@@ -67,12 +67,12 @@ class transferFunction{
 			// Simple Lag case
 			if (size_num == 1 && size_denum == 2){
 				if (*step<1){
-					yd=a0*r/b1; // (-b0*y + a0*r)/b1   but y is 0 
+					yd=a0*r/b1; // (-b0*y + a0*r)/b1   but y is 0
 					return 0;
 				}else{
 					y+=yd*dt;
 					yd=(-b0*y+a0*r)/b1;
-					return y;	
+					return y;
 				}
 				return 0;
 			}
@@ -82,7 +82,7 @@ class transferFunction{
 					input_history.state=r;
 					rd=diffrentiate(input_history);
 					input_history.state_prev=r;
-					yd=(a1*rd+a0*r)/b1; // yd=(-b0*y+a1*rd+a0*r)/b1  but y is 0 
+					yd=(a1*rd+a0*r)/b1; // yd=(-b0*y+a1*rd+a0*r)/b1  but y is 0
 					return 0;
 				}else{
 					y+=yd*dt;
@@ -90,7 +90,7 @@ class transferFunction{
 					rd=diffrentiate(input_history);
 					input_history.state_prev=r;
 					yd=(-b0*y+a1*rd+a0*r)/b1;
-					return y;	
+					return y;
 				}
 				return 0;
 			}

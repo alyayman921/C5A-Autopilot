@@ -14,4 +14,4 @@ make
 sudo make install
 sudo ldconfig 
 cd  "$current_dir"
-g++ -std=c++23 flightsim.cpp -o FlightSimulator -I/usr/include/eigen3 -lm -lxlsxio_read -lserial
+make clean && make
