@@ -17,10 +17,10 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 
 Serial Library is not for windows, so throw that STM32 away
 
-[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.41/Release_Windows_x64.zip)
+[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.51/Release_Windows_x64.zip)
 
 ## **Linux Guide:** 
-[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.41/Release_Linux_x64.zip)
+[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.51/Release_Linux_x64.zip)
 
 **or for better performance**
 

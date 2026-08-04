@@ -129,16 +129,15 @@ class controller{
 		}
 
 		void pitch_controller(){
-
-			if (Autopiloted&&!(commands->ext_controller)){
-				delta_theta=results[*step][7]-results[0][7];
-				y_pitch=pitch_tf.solve(((commands->set_pitch)-delta_theta));
-				de=-(y_pitch - ((delta_theta*1.734+results[*step][4])*1.5236));
-				de=pitch_servo.solve(de);
-				if (de>de_max){de=de_max;}
-				if (de<de_min){de=de_min;}
-				*Controls={da,de,dth,dr};
-				}
+        if (Autopiloted&&!(commands->ext_controller)){
+          delta_theta=results[*step][7]-results[0][7];
+          y_pitch=pitch_tf.solve(((commands->set_pitch)-delta_theta));
+          de=-(y_pitch - ((delta_theta*1.734+results[*step][4])*1.5236));
+          de=pitch_servo.solve(de);
+          if (de>de_max){de=de_max;}
+          if (de<de_min){de=de_min;}
+          *Controls={da,de,dth,dr};
+          }
 			}
 
 		void altitude_controller(){

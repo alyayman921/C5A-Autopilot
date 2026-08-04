@@ -9,12 +9,12 @@
 
 class fullLinear{
   private:
-    struct linear_state_histroy{ // DELTA STATES
+    struct{ // DELTA STATES
       Eigen::Matrix<double,4,1> x_long;
       Eigen::Matrix<double,5,1> x_lat;
       Eigen::Matrix<double,4,1> xd_long;
       Eigen::Matrix<double,5,1> xd_lat;
-    };linear_state_histroy lsh;
+    }lsh;//linear_state_histroy lsh;
     Eigen::Matrix<double,9,1> initial_state;
     Eigen::Matrix<double,4,4> A_Long;
     Eigen::Matrix<double,5,5> A_Lat;
