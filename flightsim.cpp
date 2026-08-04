@@ -45,10 +45,10 @@ int main(int argc, char* argv[]) {
                 std::cout<<"External Controller\n";
                 commands.ext_controller = true;
             }
-            // if (arg == "--lin") {
-            //     std::cout<<"Linear Simulator\n";
-            //     commands.linear= true;
-            // }
+            if (arg == "--lin") {
+                std::cout<<"Linear Simulator\n";
+                commands.linear= true;
+            }
         }
     }
         if(commands.alt_override){
