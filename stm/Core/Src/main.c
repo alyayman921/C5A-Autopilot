@@ -7,13 +7,13 @@
 
 TIM_HandleTypeDef htim1;
 
-uint8_t thisbnigger='!';
+uint8_t start_char='!';
 uint8_t terminating_char='$';
 uint8_t byte_received;
 uint8_t* rx_rec=&byte_received;
 int input_i[n_ints]={0.0};
 float input_f[n_floats]={0.0f};
-
+float states[9]={0};
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
