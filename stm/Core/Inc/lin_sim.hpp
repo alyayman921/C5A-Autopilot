@@ -1,6 +1,16 @@
 #pragma once
 #include <stdint.h>
 #include "arm_math.h"
+extern float dt;
+extern float* Controls;
+extern uint8_t Autopiloted;
+float select_lat[2]={0};
+float yd[9]={0};
+float delta_state[9]={0};
+
+struct flight_path{
+    float h, v_tot, delta_h_dot, alpha, beta, gamma;
+};
 struct{
   float x_long[4]={0};
   float x_lat[5]={0};
@@ -40,13 +50,14 @@ float B_Lat[5][2]={
     {0,         0}
   };
 arm_matrix_instance_f32 BLa = {5, 2, &B_Lat[0][0]};
-extern float* Controls;
-extern float dt;
-extern uint8_t Autopiloted;
-float select_lat[2]={0};
-float yd[9]={0};
-float delta_state[9]={0};
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+float solve_step(int step, float states[9]);
+float* solve();
 float atan2_2(float y, float x);
 float hypot_2(float y, float x);
-float solve_step(int step, float states[9]);
+#ifdef __cplusplus
+}
+#endif

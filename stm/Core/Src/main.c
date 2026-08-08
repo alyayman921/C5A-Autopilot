@@ -26,6 +26,9 @@ void write_string();
 void handle_ints();
 void handle_floats();
 void write_control_actions(float da,float de,float dth, float dr);
+float* solve();
+
+float dt=0.01;
 
 int main(void){
 {
@@ -52,57 +55,66 @@ int main(void){
   // set_serial_vars(rx_rec, input1_int);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
 }
-  int idle = 0;
   while (1)
   {
-    if(rx_receive(rx_rec) && *rx_rec==start_char){
-      idle = 0;
-      HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-      if(read_string()){
-        step++;
-        handle_ints();
-        handle_floats();
+    // HAL_Delay(5000);
+    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
+    // CDC_Transmit_FS((uint8_t*)'N', 1);
+    // float* solution=solve();
+    // for (int i=0;i<9;i++){
+    //   CDC_Transmit_FS((uint8_t*)solution, 1);
+    // }
+    // // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
+    int idle = 0;
+     if(rx_receive(rx_rec) && *rx_rec==start_char){
+       idle = 0;
+       HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+       if(read_string()){
+         step++;
+         handle_ints();
+         handle_floats();
 
-        struct autopilot_inputs cmd;
-        cmd.alt_override = input_i[1];
-        cmd.head_override = input_i[2];
-        cmd.ext_controller = input_i[3];
-        cmd.set_pitch = input_f[0];
-        cmd.set_vel = input_f[1];
-        cmd.set_alt = input_f[2];
-        cmd.set_heading = input_f[3];
-        cmd.set_roll = input_f[4];
+         struct autopilot_inputs cmd;
+         cmd.alt_override = input_i[1];
+         cmd.head_override = input_i[2];
+         cmd.ext_controller = input_i[3];
+         cmd.set_pitch = input_f[0];
+         cmd.set_vel = input_f[1];
+         cmd.set_alt = input_f[2];
+         cmd.set_heading = input_f[3];
+         cmd.set_roll = input_f[4];
 
-        float results[9];
-        for (int i = 0; i < 9; i++) results[i] = input_f[5 + i];
+         float results[9];
+         for (int i = 0; i < 9; i++) results[i] = input_f[5 + i];
 
-        struct flight_path fp;
-        fp.h = input_f[14];
-        fp.v_tot = input_f[15];
-        fp.delta_h_dot = input_f[16];
-        fp.alpha = input_f[17];
-        fp.beta = input_f[18];
-        fp.gamma = input_f[19];
+         struct flight_path fp;
+         fp.h = input_f[14];
+         fp.v_tot = input_f[15];
+         fp.delta_h_dot = input_f[16];
+         fp.alpha = input_f[17];
+         fp.beta = input_f[18];
+         fp.gamma = input_f[19];
 
-        if (!cmd.alt_override) {
-          alt_controller(&cmd, &fp);
-        }
+         if (!cmd.alt_override) {
+           alt_controller(&cmd, &fp);
+         }
 
-        pitch_controller(results, &cmd);
-        velocity_controller(results, &cmd);
-        if (!cmd.head_override) {
-            yaw_controller(results, &cmd);
-          }
-        roll_controller(results, &cmd);
-        write_control_actions(da, de, dth, dr);
-      }
-    } else {
-      idle++;
-      if (idle > 100000) {
-        reset_controller();
-        idle = 0;
-      }
-    }
+         pitch_controller(results, &cmd);
+         velocity_controller(results, &cmd);
+         if (!cmd.head_override) {
+             yaw_controller(results, &cmd);
+           }
+         roll_controller(results, &cmd);
+         write_control_actions(da, de, dth, dr);
+       }
+     } else {
+       idle++;
+       if (idle > 100000) {
+         reset_controller();
+         idle = 0;
+       }
+     }
   }
 }
 

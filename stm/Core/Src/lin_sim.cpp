@@ -1,6 +1,15 @@
 #include "lin_sim.hpp"
 #include <cmath>
 extern struct flight_path str_h;//check if it needs to be a pointer or no
+extern float da,de,dth,dr;
+float* solve(){
+  static float states[9]={0};
+  int N_steps=(int) 100.0 / 0.01;
+  for (int i=0;i<N_steps;i++){
+    solve_step(i,states);
+  }
+ return states;
+}
 float solve_step(int step, float states[9]){
    if(step==0){
      for(int i=0;i<9;i++){
@@ -16,7 +25,7 @@ float solve_step(int step, float states[9]){
     lsh.x_lat[0]=delta_state[1];lsh.x_lat[1]=delta_state[3];lsh.x_lat[2]=delta_state[5];
     lsh.x_lat[3]=delta_state[6];lsh.x_lat[4]=delta_state[8];
     // xd_long = A_Long*x_long + B_Long*[Controls[1], Controls[2]]
-    seg[0]=Controls[1];seg[1]=Controls[2];
+    seg[0]=de;seg[1]=dth;
     arm_matrix_instance_f32 x_long_m = {4, 1, lsh.x_long};
     arm_matrix_instance_f32 seg_long_m = {2, 1, seg};
     arm_matrix_instance_f32 xd_long_m = {4, 1, lsh.xd_long};
@@ -28,7 +37,7 @@ float solve_step(int step, float states[9]){
         lsh.xd_long[i]+=b_long_out[i];
     }
     // xd_lat = A_Lat*x_lat + B_Lat*[Controls[0], Controls[3]]
-    seg[0]=Controls[0];seg[1]=Controls[3];
+    seg[0]=da;seg[1]=dr;
     arm_matrix_instance_f32 x_lat_m = {5, 1, lsh.x_lat};
     arm_matrix_instance_f32 seg_lat_m = {2, 1, seg};
     arm_matrix_instance_f32 xd_lat_m = {5, 1, lsh.xd_lat};
@@ -74,8 +83,8 @@ float hypot_2(float y, float x){
   return result;
 }
 void h_calculation(float state[9]){
-    str_h.alpha=std::atan2(state[2],state[0]);
-    str_h.v_tot=std::hypot(state[0],state[2]);
+    str_h.alpha=atan2_2(state[2],state[0]);
+    str_h.v_tot=hypot_2(state[0],state[2]);
     // str_h.beta=std::atan2(state[1],str_h.v_tot);
     str_h.gamma=state[7]-str_h.alpha;
     str_h.delta_h_dot=str_h.v_tot*std::sin(str_h.gamma);

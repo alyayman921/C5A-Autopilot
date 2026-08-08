@@ -38,13 +38,6 @@ CXX_SOURCES = Core/Src/lin_sim.cpp
 CXX = arm-none-eabi-g++
 CXX_DEFS=-DARM_MATH_CM3
 
-CXX_INCLUDES =  \
--ICore/Inc \
--IDrivers/CMSIS/Device/ST/STM32F1xx/Include \
--IDrivers/CMSIS/Include\
--IDrivers/CMSIS/DSP/Include
-
-
 
 # C sources
 C_SOURCES =  \
@@ -141,6 +134,13 @@ C_DEFS =  \
 
 # AS includes
 AS_INCLUDES =
+
+
+CXX_INCLUDES =  \
+-ICore/Inc \
+-IDrivers/CMSIS/Device/ST/STM32F1xx/Include \
+-IDrivers/CMSIS/Include\
+-IDrivers/CMSIS/DSP/Include
 
 # C includes
 C_INCLUDES =  \
