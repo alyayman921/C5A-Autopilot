@@ -3,7 +3,7 @@
 const float deg2rad=3.1415f/180.0f;
 const float rad2deg=180.0f/3.1415f;
 float da,de,dth,dr;
-float Controls[4]={0};
+extern float* ptrControls;
 int step;
 
 struct autopilot_inputs{
@@ -64,7 +64,7 @@ struct tf_lag yaw_servo_state;
 
 void reset_controller(void){
     da=0; de=0; dth=0; dr=0;
-    Controls[0]=da;Controls[1]=de;Controls[2]=dth;Controls[3]=dr;
+    ptrControls[0]=da;ptrControls[1]=de;ptrControls[2]=dth;ptrControls[3]=dr;
     pitch_initialized=0; pitch_initial=0;
     y_pitch=0; y_vel=0; y_alt=0; coordinated_roll=0;
     pitch_tf_state.y_prev=0; pitch_tf_state.r_prev=0; pitch_tf_state.initialized=0;
@@ -102,8 +102,8 @@ float solve_leadlag(struct tf_leadlag *s, float a0, float a1, float b0, float b1
         s->initialized = 1;
         return 0.0f;
     }
-    float y = (1.0f - b0 * 0.01f / b1) * s->y_prev 
-            + (a1 / b1) * (s->r_prev - s->r_prev2) 
+    float y = (1.0f - b0 * 0.01f / b1) * s->y_prev
+            + (a1 / b1) * (s->r_prev - s->r_prev2)
             + (a0 * 0.01f / b1) * s->r_prev;
     s->r_prev2 = s->r_prev;
     s->r_prev = r;
@@ -120,7 +120,7 @@ void pitch_controller(float *results, struct autopilot_inputs *cmd){
         de = solve_lag(&pitch_servo_state, 10.0f, 10.0f, 1.0f, de);
         if (de > de_max) de = de_max;
         if (de < de_min) de = de_min;
-    Controls[1]=de;
+    ptrControls[1]=de;
     }
 }
 
@@ -132,7 +132,7 @@ void velocity_controller(float *results, struct autopilot_inputs *cmd){
         if (dth > dth_max) { dth = dth_max; if (vel_tf_state.y_prev > dth_max) vel_tf_state.y_prev = dth_max; if (vel_tf_state.y_prev < dth_min) vel_tf_state.y_prev = dth_min; }
         if (dth < dth_min) { dth = dth_min; if (vel_tf_state.y_prev > dth_max) vel_tf_state.y_prev = dth_max; if (vel_tf_state.y_prev < dth_min) vel_tf_state.y_prev = dth_min; }
     }
-    Controls[2]=dth;
+    ptrControls[2]=dth;
 }
 
 void alt_controller(struct autopilot_inputs *cmd, struct flight_path *fp){
@@ -151,7 +151,7 @@ void roll_controller(float *results, struct autopilot_inputs *cmd){
         if (da > da_max) da = da_max;
         if (da < da_min) da = da_min;
     }
-    Controls[0]=da;
+    ptrControls[0]=da;
 }
 
 void yaw_controller(float *results, struct autopilot_inputs *cmd){
@@ -163,7 +163,7 @@ void yaw_controller(float *results, struct autopilot_inputs *cmd){
         dr = solve_leadlag(&yaw_damper_state, 0.0f, 0.88711f, 0.1f, 1.0f, results[5]);
         dr = solve_lag(&yaw_servo_state, 10.0f, 10.0f, 1.0f, dr);
     }
-    Controls[3]=dr;
+    ptrControls[3]=dr;
 }
 
 /*

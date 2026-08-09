@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include "arm_math.h"
 extern float dt;
-extern float Controls[4];
 extern uint8_t Autopiloted;
 float select_lat[2]={0};
 float yd[9]={0};
@@ -12,7 +11,7 @@ struct flight_path{
     float h, v_tot, delta_h_dot, alpha, beta, gamma;
 };
 
-struct{
+struct{ // Delta States
   float x_long[4]={0};
   float x_lat[5]={0};
   float xd_long[4]={0};
@@ -20,11 +19,11 @@ struct{
 }lsh;
 
 float seg[2]={0,0};
-// float [9]={743.6104,0,45.4812,0,0,0,0,0.0612,0};
+// float S0[9]={743.6104,0,45.4812,0,0,0,0,0.0612,0};
 // JUST FYI I SWITCHED TO C++ BECAUSE THIS ASSIGNMENT DOESN'T WORK IN C HAHAHAHA
 float A_Long[4][4]={
     {-0.0038 ,  0.0304,  -45.4812,  -32.1140},
-    {0.0605,   -0.4270,  743.6104,   -1.9642},
+    {-0.0605,   -0.4270,  743.6104,   -1.9642},
     {-0.0002,   -0.0017,   -0.6413,    0.0004},
     {0,        0,   1.0000,         0}
   };
@@ -54,10 +53,11 @@ float B_Lat[5][2]={
 arm_matrix_instance_f32 BLa = {5, 2, &B_Lat[0][0]};
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { // this helped C code execute these functions for some reason
 #endif
-void solve_step(float* sol);
-void solve(int x,float* states);
+void h_calculation(float* sol, flight_path *fp);
+void solve_step(float* sol, flight_path *fp);
+// void solve(int x,float* states);
 float atan2_2(float y, float x);
 float hypot_2(float y, float x);
 #ifdef __cplusplus

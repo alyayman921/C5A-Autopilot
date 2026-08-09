@@ -13,7 +13,6 @@ uint8_t byte_received;
 uint8_t* rx_rec=&byte_received;
 int input_i[n_ints]={0.0};
 float input_f[n_floats]={0.0f};
-float states[9]={743.6104,0,45.4812,0,0,0,0,0.0612,0};
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
@@ -26,9 +25,12 @@ void write_string();
 void handle_ints();
 void handle_floats();
 void write_control_actions(float da,float de,float dth, float dr);
-void solve(int n,float states[9]);
+void solve_step(float states[9],struct flight_path *str_h);
 
+float Controls[4]={0};
+float* ptrControls=&Controls[0];
 float dt=0.01;
+int N_Steps=10000;
 
 int main(void){
 {
@@ -57,19 +59,43 @@ int main(void){
 }
   while (1)
   {
+    // This is the Solver mode, Solving Linear Model on the STM32
+    float states[9]={743.6104,0,45.4812,0,0,0,0,0.0612,0};
     struct autopilot_inputs cmd;
     cmd.alt_override = 0;
     cmd.head_override = 0;
     cmd.ext_controller = 1;
     cmd.set_pitch = 0;
     cmd.set_vel = 0;
-    cmd.set_alt = 1000;
+    cmd.set_alt = 000;
     cmd.set_heading = 0;
     cmd.set_roll = 0;
     HAL_Delay(5000);
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
     CDC_Transmit_FS((uint8_t*)"Trying to Solve\n", 16);
-    solve(10000,states);
+
+    struct flight_path fp;
+    fp.h = 40000;
+    fp.v_tot = 0;
+    fp.delta_h_dot = 0;
+    fp.alpha = 0;
+    fp.beta = 0;
+    fp.gamma = 0;
+    // Solver Loop
+    for(int i=0;i<N_Steps;++i){
+      solve_step(states,&fp);
+      if (!cmd.alt_override) {
+        alt_controller(&cmd, &fp);
+      }
+
+      pitch_controller(states, &cmd);
+      velocity_controller(states, &cmd);
+      if (!cmd.head_override) {
+          yaw_controller(states, &cmd);
+        }
+      roll_controller(states, &cmd);
+      // write_control_actions(da, de, dth, dr);
+}
     CDC_Transmit_FS((uint8_t*)"Solved\n",7);
     char output[100];
     int offset = 0;
@@ -77,13 +103,9 @@ int main(void){
         offset += sprintf(output + offset, "states[%d] = %f\r\n", i, states[i]);
     }
     CDC_Transmit_FS((uint8_t*)output, offset);
-    // for (int i=0;i<9;i++){
-    //   CDC_Transmit_FS((uint8_t*)&states[i], 4);
-    // }
-    // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
     HAL_Delay(5000);
-
+    // This is the Normal Operation mode, No Solving Linear Model on the STM32
     // int idle = 0;
     //  if(rx_receive(rx_rec) && *rx_rec==start_char){
     //    idle = 0;
