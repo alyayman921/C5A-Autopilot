@@ -86,10 +86,9 @@ int main(void){
 
        if(cmd.onboard){
           // This is the Solver onboard mode, Solving Linear Model on the STM32
-          float states[9]={743.6104,0,45.4812,0,0,0,0,0.0612,0};
-          cmd.set_pitch += states[7];
-          cmd.set_vel += states[0];
-          cmd.set_alt += 40000;
+          float states[9];
+          for (int i = 0; i < 9; i++) states[i] = input_f[5 + i];
+          write_ack();
           HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
           // CDC_Transmit_FS((uint8_t*)"Trying to Solve\n", 16);
 
@@ -107,12 +106,30 @@ int main(void){
               }
             roll_controller(states, &cmd);
           }
+
+          // Return the solved states + final altitude in the serial protocol
+          // format so the PC can read them back like usual
+          static char result_buf[10 * 9 + 2];
+          char *res_ptr = result_buf;
+          *res_ptr++ = start_char;
+          char tmp[10];
+          float vals[10];
+          for (int i = 0; i < 9; i++) vals[i] = states[i];
+          vals[9] = fp.h;
+          for (int i = 0; i < 10; i++) {
+              snprintf(tmp, sizeof(tmp), "%+09.2f", (double)vals[i]);
+              for (int j = 0; j < 9; j++) *res_ptr++ = tmp[j];
+          }
+          *res_ptr++ = terminating_char;
+          CDC_Transmit_FS((uint8_t*)result_buf, res_ptr - result_buf);
+
           CDC_Transmit_FS((uint8_t*)"Solved\n",7);
-          char output[100];
+          char output[256];
           int offset = 0;
           for (int i = 0; i < 9; i++) {
               offset += sprintf(output + offset, "states[%d] = %f\r\n", i, states[i]);
           }
+          offset += sprintf(output + offset, "h = %f\r\n", fp.h);
           CDC_Transmit_FS((uint8_t*)output, offset);
           HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
 

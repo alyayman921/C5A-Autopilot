@@ -105,8 +105,8 @@ int main(int argc, char* argv[]) {
     // Setup and run RK4 integration for nonlinear simulator
 #ifdef USE_SERIAL
     if (commands.onboard){
-        double final_state_arr[10] = {0};
         c.linear_pointers(&final_state);
+        final_state = initial_state;
         c.onboard_sim();
     } else
 #endif

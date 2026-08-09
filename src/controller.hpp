@@ -82,11 +82,6 @@ class controller{
             std::cout<<"Connected to Port\n";
 			}
 #endif
-#ifdef USE_SERIAL
-      void onboard_sim(){
-
-      }
-#endif
 			// Pitch
 			double servo_num=10; double servo_den[2]={10 ,1.0};
 			double pitch_num=1.9948; double pitch_den[2]={0.0 ,1.0};
@@ -228,8 +223,9 @@ class controller{
 	    *ptr++ = commands->alt_override ? '1' : '0';
 	    *ptr++ = commands->head_override ? '1' : '0';
 	    *ptr++ = commands->ext_controller ? '1' : '0';
-	    // pad remaining 6 positions with '0'
-	    for (int i = 0; i < 6; ++i) *ptr++ = '0';
+	    *ptr++ = commands->onboard ? '1' : '0';
+	    // pad remaining 5 positions with '0'
+	    for (int i = 0; i < 5; ++i) *ptr++ = '0';
 
 	    // ---- Helper lambda for floats: exactly 9 chars with 2 decimals ----
 	    // Format: S DDDDD . DD (sign + 5 digits + dot + 2 decimals = 9 chars)
@@ -275,6 +271,48 @@ class controller{
 	    }
 	}
 	Eigen::Matrix<double,4,1>* get_controls() { return Controls; }
+	void onboard_sim(){
+#ifdef USE_SERIAL
+		if(commands->ext_controller && commands->onboard){
+			*step = 0;
+			// Send states0 + commands to the STM like usual
+			pack_serial_data(serial_states);
+			SP->write_string(serial_states);
+
+			// A result packet always starts with '+' or '-'; an ACK is empty.
+			auto is_result = [&]{ return serial_states[0]=='+' || serial_states[0]=='-'; };
+
+			// Phase 1: wait for any reply (ACK or the result itself)
+			bool ok = false;
+			bool replied = false;
+			for (int tries = 0; tries < 3000 && !replied; tries++) {
+				if (SP->read_string(serial_states)) {
+					replied = true;
+					ok = is_result();
+				} else {
+					usleep(1000);
+				}
+			}
+			if (!replied) {
+				std::cerr << "Onboard solve: no reply from MCU (check the USB connection)\n";
+				return;
+			}
+			// Phase 2: ACK came in, now wait for the solved states
+			for (int tries = 0; tries < 10000 && !ok; tries++) {
+				ok = SP->read_string(serial_states) && is_result();
+				if (!ok) usleep(1000);
+			}
+			if (ok){
+				for (int i = 0; i < 9; i++) {
+					(*results)(i) = std::atof(serial_states + i * 9);
+				}
+				str_h->h = std::atof(serial_states + 9 * 9);
+			} else {
+				std::cerr << "Onboard solve: MCU replied but never returned results\n";
+			}
+		}
+#endif
+	}
 	void send_states(){
 #ifdef USE_SERIAL
 		if(commands->ext_controller){

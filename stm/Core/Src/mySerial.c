@@ -40,7 +40,7 @@ int read_string(void){
                 str_received[i] = *rx_rec;
                 i++;
             } else {
-                if (++idle > 100000) break; // if 100,000 cycle passed skip
+                if (++idle > 1000000) break; // if a million cycles pass without a byte, skip
             }
         }while(i < Buffer_Size);
         str_length = i;
