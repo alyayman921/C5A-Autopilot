@@ -57,17 +57,26 @@ int main(void){
 }
   while (1)
   {
+    struct autopilot_inputs cmd;
+    cmd.alt_override = 0;
+    cmd.head_override = 0;
+    cmd.ext_controller = 1;
+    cmd.set_pitch = 0;
+    cmd.set_vel = 0;
+    cmd.set_alt = 1000;
+    cmd.set_heading = 0;
+    cmd.set_roll = 0;
     HAL_Delay(5000);
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
     CDC_Transmit_FS((uint8_t*)"Trying to Solve\n", 16);
     solve(10000,states);
     CDC_Transmit_FS((uint8_t*)"Solved\n",7);
- char output[100];
-int offset = 0;
-for (int i = 0; i < 9; i++) {
-    offset += sprintf(output + offset, "states[%d] = %f\r\n", i, states[i]);
-}
-CDC_Transmit_FS((uint8_t*)output, offset);
+    char output[100];
+    int offset = 0;
+    for (int i = 0; i < 9; i++) {
+        offset += sprintf(output + offset, "states[%d] = %f\r\n", i, states[i]);
+    }
+    CDC_Transmit_FS((uint8_t*)output, offset);
     // for (int i=0;i<9;i++){
     //   CDC_Transmit_FS((uint8_t*)&states[i], 4);
     // }

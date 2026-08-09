@@ -16,7 +16,7 @@ void solve_step(float* states){
    //   return 1;
    // }else{
     for(int i=0;i<9;i++){
-        delta_state[i]=yd[i]*dt;
+        delta_state[i]=yd[i]*0.01; // was *dt but checking something
     }
     // Verified, Don't look at them for too long
     lsh.x_long[0]=delta_state[0];lsh.x_long[1]=delta_state[2];
