@@ -1,31 +1,30 @@
 #include "lin_sim.hpp"
 #include <cmath>
 extern struct flight_path str_h;//check if it needs to be a pointer or no
-extern float da,de,dth,dr;
-float* solve(){
-  static float states[9]={0};
-  int N_steps=(int) 100.0 / 0.01;
+// extern float Controls[4];
+void solve(int N_steps, float* states){
   for (int i=0;i<N_steps;i++){
-    solve_step(i,states);
+    solve_step(states);
   }
- return states;
 }
-float solve_step(int step, float states[9]){
-   if(step==0){
-     for(int i=0;i<9;i++){
-         states[i]=S0[i];
-     }
-     return 1;
-   }else{
+
+void solve_step(float* states){
+   // if(step==0){
+   //   for(int i=0;i<9;i++){
+   //       states[i]=S0[i];
+   //   }
+   //   return 1;
+   // }else{
     for(int i=0;i<9;i++){
         delta_state[i]=yd[i]*dt;
     }
+    // Verified, Don't look at them for too long
     lsh.x_long[0]=delta_state[0];lsh.x_long[1]=delta_state[2];
     lsh.x_long[2]=delta_state[4];lsh.x_long[3]=delta_state[7];
     lsh.x_lat[0]=delta_state[1];lsh.x_lat[1]=delta_state[3];lsh.x_lat[2]=delta_state[5];
     lsh.x_lat[3]=delta_state[6];lsh.x_lat[4]=delta_state[8];
     // xd_long = A_Long*x_long + B_Long*[Controls[1], Controls[2]]
-    seg[0]=de;seg[1]=dth;
+    seg[0]=Controls[1];seg[1]=Controls[2];
     arm_matrix_instance_f32 x_long_m = {4, 1, lsh.x_long};
     arm_matrix_instance_f32 seg_long_m = {2, 1, seg};
     arm_matrix_instance_f32 xd_long_m = {4, 1, lsh.xd_long};
@@ -37,7 +36,7 @@ float solve_step(int step, float states[9]){
         lsh.xd_long[i]+=b_long_out[i];
     }
     // xd_lat = A_Lat*x_lat + B_Lat*[Controls[0], Controls[3]]
-    seg[0]=da;seg[1]=dr;
+    seg[0]=Controls[0];seg[1]=Controls[3];
     arm_matrix_instance_f32 x_lat_m = {5, 1, lsh.x_lat};
     arm_matrix_instance_f32 seg_lat_m = {2, 1, seg};
     arm_matrix_instance_f32 xd_lat_m = {5, 1, lsh.xd_lat};
@@ -54,7 +53,7 @@ float solve_step(int step, float states[9]){
     for(int i=0;i<9;i++){
         states[i]+=delta_state[i];
     }
-    }
+    // }
   }
 float atan2_2(float y, float x){
   // Thanks to that guy on stackoverflow
