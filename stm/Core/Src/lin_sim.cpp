@@ -3,16 +3,21 @@
 extern float Controls[4];
 
 void solve_step(float* states,flight_path *str_h){
+    for(int i=0;i<9;i++){
+        delta_state[i]=states[i]-S0[i];
+    }
     // Verified, Don't look at them for too long
     lsh.x_long[0]=delta_state[0];lsh.x_long[1]=delta_state[2];
     lsh.x_long[2]=delta_state[4];lsh.x_long[3]=delta_state[7];
+
     lsh.x_lat[0]=delta_state[1];lsh.x_lat[1]=delta_state[3];lsh.x_lat[2]=delta_state[5];
     lsh.x_lat[3]=delta_state[6];lsh.x_lat[4]=delta_state[8];
+
     seg[0]=Controls[1];seg[1]=Controls[2];
 
     arm_matrix_instance_f32 x_long_m = {4, 1, lsh.x_long};
-    arm_matrix_instance_f32 seg_long_m = {2, 1, seg};
     arm_matrix_instance_f32 xd_long_m = {4, 1, lsh.xd_long};
+    arm_matrix_instance_f32 seg_long_m = {2, 1, seg};
     arm_mat_mult_f32(&ALo, &x_long_m, &xd_long_m);
 
     float b_long_out[4];
@@ -37,8 +42,7 @@ void solve_step(float* states,flight_path *str_h){
     yd[6]=lsh.xd_lat[3];yd[7]=lsh.xd_long[3];yd[8]=lsh.xd_lat[4];
 
     for(int i=0;i<9;i++){
-        delta_state[i]=yd[i]*dt; // was dt but checking something
-        states[i]+=delta_state[i];
+        states[i]+=yd[i]*dt;
     }
     h_calculation(states,str_h);
   }

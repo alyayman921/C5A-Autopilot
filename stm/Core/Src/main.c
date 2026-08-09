@@ -65,9 +65,9 @@ int main(void){
     cmd.alt_override = 0;
     cmd.head_override = 0;
     cmd.ext_controller = 1;
-    cmd.set_pitch = 0;
-    cmd.set_vel = 0;
-    cmd.set_alt = 000;
+    cmd.set_pitch = 0+states[7];
+    cmd.set_vel = 0+states[0];
+    cmd.set_alt = 1000+40000;
     cmd.set_heading = 0;
     cmd.set_roll = 0;
     HAL_Delay(5000);
