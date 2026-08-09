@@ -15,12 +15,14 @@ int main(int argc, char* argv[]) {
             std::cout<< "Arguments    Usage\n";
             std::cout<< "---------    ---------------------------------------------------------\n";
             std::cout<< "--help       print this message\n";
-            std::cout<< "--ext        use external Micorcontroller as aircraft controller\n";
             std::cout<< "--lin        switch to linear statespace simulator\n";
             std::cout<< "--loop       prevent the program from exiting after solving\n";
             std::cout<< "--manual     read the control commands from the textfile controls.txt\n";
             std::cout<< "--pitch      overrides altitude loop straight to pitch control\n";
-            std::cout<< "--roll       overrides heading loop straight to roll control\n";
+            std::cout<< "--roll       overrides heading loop straight to roll control\n\n";
+            std::cout<< "----------------   STM32F103C8T + Linux Only -----------------\n";
+            std::cout<< "--ext        use external Micorcontroller as aircraft controller\n";
+            std::cout<< "--onboard    solve the linear sim on the STM\n";
             return 0;
         }
         for(int i=0;i<argc;i++){
@@ -48,6 +50,11 @@ int main(int argc, char* argv[]) {
             if (arg == "--lin") {
                 std::cout<<"Linear Simulator\n";
                 commands.linear= true;
+            }
+            if (arg == "--onboard") {
+                std::cout<<"External Linear Simulator\n";
+                commands.onboard= true;
+                commands.ext_controller = true;
             }
         }
     }
@@ -96,6 +103,13 @@ int main(int argc, char* argv[]) {
     controller c(&Controls,&c5a, &str_h,dt,&step,&commands,Autopiloted);
     auto prev =std::chrono::steady_clock::now();
     // Setup and run RK4 integration for nonlinear simulator
+#ifdef USE_SERIAL
+    if (commands.onboard){
+        double final_state_arr[10] = {0};
+        c.linear_pointers(&final_state);
+        c.onboard_sim();
+    } else
+#endif
     if (commands.linear){
       fullLinear l(&Controls,&c5a, &str_h,dt,&step,&commands,initial_state,&c,Autopiloted);
       results=l.solve(N_steps);

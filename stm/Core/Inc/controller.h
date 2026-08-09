@@ -10,6 +10,7 @@ struct autopilot_inputs{
     int alt_override;
     int head_override;
     int ext_controller;
+    int onboard;
     float set_pitch;
     float set_vel;
     float set_alt;

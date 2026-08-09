@@ -13,6 +13,7 @@ struct autopilot_inputs{
     bool alt_override=false; // overrides altitude loop straight to pitch control
     bool head_override=false; // overrides heading loop straight to roll control
     bool ext_controller=false; // controls from ext mcu
+    bool onboard=false; // controls from ext mcu
     bool linear=false;
     double dt=0.01;double set_pitch=0;
     double set_vel=0;double set_alt=0;

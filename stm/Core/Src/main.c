@@ -54,107 +54,95 @@ int main(void){
   HAL_Delay(200);
   HAL_TIM_Base_Start_IT(&htim1);
 
-  // set_serial_vars(rx_rec, input1_int);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
 }
   while (1)
   {
-    // This is the Solver mode, Solving Linear Model on the STM32
-    float states[9]={743.6104,0,45.4812,0,0,0,0,0.0612,0};
-    struct autopilot_inputs cmd;
-    cmd.alt_override = 0;
-    cmd.head_override = 0;
-    cmd.ext_controller = 1;
-    cmd.set_pitch = 0+states[7];
-    cmd.set_vel = 0+states[0];
-    cmd.set_alt = 1000+40000;
-    cmd.set_heading = 0;
-    cmd.set_roll = 0;
-    HAL_Delay(5000);
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
-    CDC_Transmit_FS((uint8_t*)"Trying to Solve\n", 16);
+    int idle = 0;
+     if(rx_receive(rx_rec) && *rx_rec==start_char){
+        struct autopilot_inputs cmd;
+       if(read_string()){
+         step++;
+         handle_ints();
+         handle_floats();
 
-    struct flight_path fp;
-    fp.h = 40000;
-    fp.v_tot = 0;
-    fp.delta_h_dot = 0;
-    fp.alpha = 0;
-    fp.beta = 0;
-    fp.gamma = 0;
-    // Solver Loop
-    for(int i=0;i<N_Steps;++i){
-      solve_step(states,&fp);
-      if (!cmd.alt_override) {
-        alt_controller(&cmd, &fp);
+          cmd.alt_override = input_i[1];
+          cmd.head_override = input_i[2];
+          cmd.ext_controller = input_i[3];
+          cmd.onboard = input_i[4];
+          cmd.set_pitch = input_f[0];
+          cmd.set_vel = input_f[1];
+          cmd.set_alt = input_f[2];
+          cmd.set_heading = input_f[3];
+          cmd.set_roll = input_f[4];
+
+          struct flight_path fp;
+          fp.h = 40000;
+          fp.v_tot = 0;
+          fp.delta_h_dot = 0;
+          fp.alpha = 0;
+          fp.beta = 0;
+          fp.gamma = 0;
+
+       if(cmd.onboard){
+          // This is the Solver onboard mode, Solving Linear Model on the STM32
+          float states[9]={743.6104,0,45.4812,0,0,0,0,0.0612,0};
+          cmd.set_pitch += states[7];
+          cmd.set_vel += states[0];
+          cmd.set_alt += 40000;
+          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
+          // CDC_Transmit_FS((uint8_t*)"Trying to Solve\n", 16);
+
+          // Solver Loop
+          for(int i=0;i<N_Steps;++i){
+            solve_step(states,&fp);
+            if (!cmd.alt_override) {
+              alt_controller(&cmd, &fp);
+            }
+
+            pitch_controller(states, &cmd);
+            velocity_controller(states, &cmd);
+            if (!cmd.head_override) {
+                yaw_controller(states, &cmd);
+              }
+            roll_controller(states, &cmd);
+          }
+          CDC_Transmit_FS((uint8_t*)"Solved\n",7);
+          char output[100];
+          int offset = 0;
+          for (int i = 0; i < 9; i++) {
+              offset += sprintf(output + offset, "states[%d] = %f\r\n", i, states[i]);
+          }
+          CDC_Transmit_FS((uint8_t*)output, offset);
+          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
+
+       // Normal Mode, Solve on PC control on STM32
+       }else{
+       idle = 0;
+       HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
+         float results[9];
+         for (int i = 0; i < 9; i++) results[i] = input_f[5 + i];
+         if (!cmd.alt_override) {
+           alt_controller(&cmd, &fp);
+         }
+
+         pitch_controller(results, &cmd);
+         velocity_controller(results, &cmd);
+         if (!cmd.head_override) {
+             yaw_controller(results, &cmd);
+           }
+         roll_controller(results, &cmd);
+         write_control_actions(da, de, dth, dr);
+       }
       }
-
-      pitch_controller(states, &cmd);
-      velocity_controller(states, &cmd);
-      if (!cmd.head_override) {
-          yaw_controller(states, &cmd);
-        }
-      roll_controller(states, &cmd);
-      // write_control_actions(da, de, dth, dr);
-}
-    CDC_Transmit_FS((uint8_t*)"Solved\n",7);
-    char output[100];
-    int offset = 0;
-    for (int i = 0; i < 9; i++) {
-        offset += sprintf(output + offset, "states[%d] = %f\r\n", i, states[i]);
-    }
-    CDC_Transmit_FS((uint8_t*)output, offset);
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
-    HAL_Delay(5000);
-    // This is the Normal Operation mode, No Solving Linear Model on the STM32
-    // int idle = 0;
-    //  if(rx_receive(rx_rec) && *rx_rec==start_char){
-    //    idle = 0;
-    //    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    //    if(read_string()){
-    //      step++;
-    //      handle_ints();
-    //      handle_floats();
-
-    //      struct autopilot_inputs cmd;
-    //      cmd.alt_override = input_i[1];
-    //      cmd.head_override = input_i[2];
-    //      cmd.ext_controller = input_i[3];
-    //      cmd.set_pitch = input_f[0];
-    //      cmd.set_vel = input_f[1];
-    //      cmd.set_alt = input_f[2];
-    //      cmd.set_heading = input_f[3];
-    //      cmd.set_roll = input_f[4];
-
-    //      float results[9];
-    //      for (int i = 0; i < 9; i++) results[i] = input_f[5 + i];
-
-    //      struct flight_path fp;
-    //      fp.h = input_f[14];
-    //      fp.v_tot = input_f[15];
-    //      fp.delta_h_dot = input_f[16];
-    //      fp.alpha = input_f[17];
-    //      fp.beta = input_f[18];
-    //      fp.gamma = input_f[19];
-
-    //      if (!cmd.alt_override) {
-    //        alt_controller(&cmd, &fp);
-    //      }
-
-    //      pitch_controller(results, &cmd);
-    //      velocity_controller(results, &cmd);
-    //      if (!cmd.head_override) {
-    //          yaw_controller(results, &cmd);
-    //        }
-    //      roll_controller(results, &cmd);
-    //      write_control_actions(da, de, dth, dr);
-    //    }
-    //  } else {
-    //    idle++;
-    //    if (idle > 100000) {
-    //      reset_controller();
-    //      idle = 0;
-    //    }
-    //  }
+     } else {
+       idle++;
+       if (idle > 100000) {
+         reset_controller();
+         idle = 0;
+       }
+     }
   }
 }
 

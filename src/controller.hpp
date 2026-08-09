@@ -82,6 +82,11 @@ class controller{
             std::cout<<"Connected to Port\n";
 			}
 #endif
+#ifdef USE_SERIAL
+      void onboard_sim(){
+
+      }
+#endif
 			// Pitch
 			double servo_num=10; double servo_den[2]={10 ,1.0};
 			double pitch_num=1.9948; double pitch_den[2]={0.0 ,1.0};
