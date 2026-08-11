@@ -7,6 +7,15 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 
 ![Release 1.41](Documentation/V1.41/Release1.41.gif)
 
+# Features
+- Rigid Body Dynamics simulator with RK4 solver
+- Easy Controller Implementation with transfer function class
+- State Logging to csv
+- Linear Simulator Implementation
+- Can work with STM32 MicroController as Control Logic (Linux Only)
+- STM32 Standalone Linear solver + controller (Linux Only)
+- For Any Aircraft, provided you add your own controllers and fix some hardcoded points
+
 ## Build From Source
 *Dependencies:*
 - [XLSX I/O C library](https://github.com/brechtsanders/xlsxio).
@@ -113,3 +122,12 @@ if a state is to be derived (multiplied by s), for the first time step we set th
 > ai was used too in the STM32 part of the project, to help with the uncharted Drivers territory and do the donkey work that was done before, for example after setting up the communication bridge via USB CDC, ai converted the floats to certain amount of characters to send from the c++ code to stm, you can probably tell whose idea this was, it also implemented the same controllers with the euler method, since it choked on it's own saliva while trying to use the digital controllers.
 
 [^1]: o
+
+[^2]: ix
+
+[^3]: 
+
+[^4]: unc
+
+[^5]: :q
+
