@@ -17,6 +17,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
 extern int rx_receive(uint8_t *out);
+extern int str_length;
 
 int read_string();
 int write_ack();
@@ -56,12 +57,19 @@ int main(void){
 
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
 }
+  int idle = 0;
   while (1)
   {
-    int idle = 0;
      if(rx_receive(rx_rec) && *rx_rec==start_char){
+        idle = 0;
         struct autopilot_inputs cmd;
        if(read_string()){
+         if (str_length != 190) {
+           /* Byte-alignment guard: only accept full PC packets.
+              Self-TX loopback, dropped bytes, or overflow produce
+              packets of other lengths - discard and re-sync. */
+           continue;
+         }
          step++;
          handle_ints();
          handle_floats();
@@ -77,23 +85,29 @@ int main(void){
           cmd.set_roll = input_f[4];
 
           struct flight_path fp;
-          fp.h = 40000;
-          fp.v_tot = 0;
-          fp.delta_h_dot = 0;
-          fp.alpha = 0;
-          fp.beta = 0;
-          fp.gamma = 0;
+          fp.h = input_f[14];
+          fp.v_tot = input_f[15];
+          fp.delta_h_dot = input_f[16];
+          fp.alpha = input_f[17];
+          fp.beta = input_f[18];
+          fp.gamma = input_f[19];
 
        if(cmd.onboard){
-          // This is the Solver onboard mode, Solving Linear Model on the STM32
+          // Solver onboard mode, Solving Linear Model on the STM32
           float states[9];
           for (int i = 0; i < 9; i++) states[i] = input_f[5 + i];
+          // Fresh controller + solver state so the solve matches the PC
+          // linear sim (which starts its controllers from zero).
+          reset_controller();
           write_ack();
           HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET);
           // CDC_Transmit_FS((uint8_t*)"Trying to Solve\n", 16);
 
-          // Solver Loop
-          for(int i=0;i<N_Steps;++i){
+          // Solve as many steps as the PC linear sim would (sent by the PC
+          // in the flight-path v_tot slot), falling back to N_Steps.
+          int steps = (int)input_f[15];
+          if (steps <= 0) steps = N_Steps;
+          for(int i=0;i<steps;++i){
             solve_step(states,&fp);
             if (!cmd.alt_override) {
               alt_controller(&cmd, &fp);
@@ -108,30 +122,25 @@ int main(void){
           }
 
           // Return the solved states + final altitude in the serial protocol
-          // format so the PC can read them back like usual
-          static char result_buf[10 * 9 + 2];
+          // format so the PC can read them back like usual. Use more decimals
+          // than the request packet (11 chars/field) so the returned radian
+          // states aren't quantized to 2 dp, which made onboard vs --lin
+          // results visibly diverge.
+          static char result_buf[10 * 11 + 2];
           char *res_ptr = result_buf;
           *res_ptr++ = start_char;
-          char tmp[10];
+          char tmp[12];
           float vals[10];
           for (int i = 0; i < 9; i++) vals[i] = states[i];
           vals[9] = fp.h;
           for (int i = 0; i < 10; i++) {
-              snprintf(tmp, sizeof(tmp), "%+09.2f", (double)vals[i]);
-              for (int j = 0; j < 9; j++) *res_ptr++ = tmp[j];
+              snprintf(tmp, sizeof(tmp), "%+011.4f", (double)vals[i]);
+              for (int j = 0; j < 11; j++) *res_ptr++ = tmp[j];
           }
           *res_ptr++ = terminating_char;
           CDC_Transmit_FS((uint8_t*)result_buf, res_ptr - result_buf);
-
-          CDC_Transmit_FS((uint8_t*)"Solved\n",7);
-          char output[256];
-          int offset = 0;
-          for (int i = 0; i < 9; i++) {
-              offset += sprintf(output + offset, "states[%d] = %f\r\n", i, states[i]);
-          }
-          offset += sprintf(output + offset, "h = %f\r\n", fp.h);
-          CDC_Transmit_FS((uint8_t*)output, offset);
           HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET);
+          reset_controller();
 
        // Normal Mode, Solve on PC control on STM32
        }else{
@@ -268,4 +277,4 @@ void assert_failed(uint8_t *file, uint32_t line)
 {
 
 }
-#endif 
+#endif

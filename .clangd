@@ -2,3 +2,5 @@ CompileFlags:
   Add:
     - "-I/usr/include/eigen3"
     - "-std=c++23"
+    - "-I/home/aly/flsim/src"
+    - "-I/home/aly/flsim/inc"

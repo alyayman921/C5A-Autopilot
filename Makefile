@@ -1,57 +1,33 @@
-UNAME_S := $(shell uname -s)
+CXX=g++
 
-ifneq (,$(filter release,$(MAKECMDGOALS)))
-    BUILD_TYPE = release
-    $(info [RELEASE BUILD])
-else
-    $(info [DEBUG BUILD])
-endif
+CXXFLAGS=\
+-std=c++23\
+-g\
 
-$(info Building $(BUILD_TYPE) mode)
-SOURCES = flightsim.cpp
+TARGET=\
+Release/Release_Linux_x64/FlightSimulator
 
-ifeq ($(UNAME_S),Linux)
-    CXX = g++
-    TARGET = Release/Release_Linux_x64/FlightSimulator
-    INCLUDES = -I/usr/include/eigen3
-    
-    ifeq ($(BUILD_TYPE),release)
-    	CXX = g++-9
-        CXXFLAGS = -std=c++17 -DUSE_SERIAL
-        LDFLAGS = -L/usr/local/lib
-        LIBS = -Wl,-Bstatic -lxlsxio_read -lserial -Wl,-Bdynamic -lexpat -lminizip -lz -lm -lpthread
-    else
-        CXXFLAGS = -std=c++23 -DUSE_SERIAL
-        LDFLAGS = -L/usr/local/lib
-        LIBS = -lxlsxio_read -lserial -lexpat -lminizip -lz -lm -lpthread
-    endif
-endif
+CXX_SOURCES=\
+flightsim.cpp\
+$(wildcard src/*)
 
-ifneq (,$(findstring MINGW,$(UNAME_S)))
-    CXX = g++
-    INCLUDES = -I/ucrt64/include/eigen3
-    TARGET = Release/Release_Windows_x64/FlightSimulator
-    LDFLAGS = -L/ucrt64/lib
-    
-    ifeq ($(BUILD_TYPE),release)
-        CXXFLAGS = -std=c++23 -static -static-libgcc -static-libstdc++ -O2 -march=native
-    else
-        CXXFLAGS = -std=c++23 -static -static-libgcc -static-libstdc++ -O0
-    endif
-    
-    LIBS = -lxlsxio_read -lminizip -lz -lbz2 -lexpat -lwinpthread
-endif
+CXX_INCLUDES=\
+-Iinc/\
+-I/usr/include/eigen3\
 
-all: $(TARGET)
+CXX_LIBS=\
+-lm\
+-lxlsxio_read\
+-lserial\
+-lpthread
 
-debug: BUILD_TYPE = debug
-debug: clean $(TARGET)
+CXX_DEFS=\
+-DUSE_SERIAL
 
-release: BUILD_TYPE = release
-release: clean $(TARGET)
+all:	$(TARGET)
 
-$(TARGET): $(SOURCES)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LDFLAGS) $< -o $@ $(LIBS)
+$(TARGET):	$(CXX_SOURCES)
+	$(CXX) $(CXX_SOURCES) $(CXXFLAGS) $(CXX_INCLUDES) $(CXX_DEFS) $(CXX_LIBS) -o $(TARGET)
 
 clean:
-	rm -f $(TARGET)
+	rm	-f	$(TARGET)

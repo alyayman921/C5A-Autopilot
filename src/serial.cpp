@@ -1,26 +1,92 @@
-// serial_port_selector.h
-#ifndef SERIAL_PORT_SELECTOR_H
-#define SERIAL_PORT_SELECTOR_H
+#include "serial.hpp"
 
-#include <string>
-#include <vector>
-#include <iostream>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <cstring>
-#include <stdexcept>
+mySerial::mySerial() {}
 
-/**
- * @brief Checks for available serial ports on a POSIX system.
- *        If exactly one port is found, it is returned.
- *        If multiple ports are found, the user is prompted to pick one.
- *        If no ports are found, an empty string is returned.
- * @return std::string The selected serial port device path (e.g., "/dev/ttyUSB0").
- * @throws std::runtime_error if the directory cannot be opened.
- */
-inline std::string getSerialPort()
-{
+mySerial::mySerial(std::string serial_port_string) {
+  try {
+    usleep(1000);
+    this->serial_port.Open(serial_port_string);
+  } catch (const OpenFailed &) {
+    std::cerr << "The serial port did not open correctly." << std::endl;
+    return;
+  }
+  std::cerr << "Connected To Serial Port: " << serial_port_string << std::endl;
+  this->serial_port.SetBaudRate(BaudRate::BAUD_115200);
+  this->serial_port.SetCharacterSize(CharacterSize::CHAR_SIZE_8);
+  this->serial_port.SetFlowControl(FlowControl::FLOW_CONTROL_NONE);
+  this->serial_port.SetParity(Parity::PARITY_NONE);
+  this->serial_port.SetStopBits(StopBits::STOP_BITS_1);
+}
+
+void mySerial::close() { mySerial::serial_port.Close(); }
+
+void mySerial::empty_string() {
+  for (int i = 0; i < Buffer_Size; i++) {
+    string[i] = '0';
+  }
+}
+
+char mySerial::read() {
+  try {
+    serial_port.ReadByte(data_byte, ms_timeout);
+  }
+
+  catch (const ReadTimeout &) {
+  }
+  return data_byte;
+}
+
+int mySerial::read_string(char (&string)[Buffer_Size]) {
+  int i = 0;
+  mySerial::empty_string();
+  try {
+    mySerial::serial_port.ReadByte(data_byte, ms_timeout);
+    if (data_byte == start_char) {
+      // std::cout<<"found char"<<std::endl;
+      do {
+        mySerial::serial_port.ReadByte(data_byte, ms_timeout);
+        if (data_byte != terminating_char) {
+          string[i] = data_byte;
+          i++;
+          // std::cout<<i<<std::endl;
+        } else {
+          // std::cout<<"Success"<<std::endl;
+          return 1; // success, found $ and string finished
+        }
+      } while (i < Buffer_Size); // it was buffer+1, but might be buffer
+                                 // overflow
+      // check later
+    }
+    return 0;
+  } catch (const ReadTimeout &) {
+    return 0;
+  }
+}
+
+char mySerial::write(char a) {
+  try {
+    mySerial::serial_port.WriteByte(a);
+  } catch (const ReadTimeout &) {
+  }
+  return data_byte;
+}
+
+char mySerial::write_string(char *a) {
+  try {
+    mySerial::serial_port.WriteByte(start_char);
+    mySerial::serial_port.Write(a);
+    mySerial::serial_port.WriteByte(terminating_char);
+  } catch (const ReadTimeout &) {
+  }
+  return data_byte;
+}
+
+std::string mySerial::getSerialPort(){
+    // Test/debug hook: point the sim at an explicit serial device and skip
+    // the scan (e.g. a socat pty simulating the MCU).
+    if (const char* port = getenv("FSIM_SERIAL_PORT")) {
+        if (port[0]) return std::string(port);
+    }
     // List of common serial device prefixes
     const std::vector<std::string> prefixes = {
         //"/dev/ttyS",    // standard serial ports
@@ -98,4 +164,3 @@ inline std::string getSerialPort()
     }
 }
 
-#endif // SERIAL_PORT_SELECTOR_H
