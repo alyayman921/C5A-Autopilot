@@ -9,7 +9,7 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 
 # Features
 - Rigid Body Dynamics simulator with RK4 solver
-- Easy Controller Implementation with in the house Transfer Function "library"
+- Easy Controller Implementation with in the house Transfer Function library
 - Linear Simulator Implementation
 - Mode for STM32 board as Controller logic
 - Mode STM32 Standalone Linear Simulator
