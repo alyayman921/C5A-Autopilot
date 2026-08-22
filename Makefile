@@ -72,3 +72,6 @@ $(TARGET): $(CXX_SOURCES)
 
 clean:
 	rm -f $(TARGET)
+install:
+	mkdir -p /usr/share/3lymnFlightSimulator && cp -r meta /usr/share/3lymnFlightSimulator
+	cp $(TARGET) /usr/bin

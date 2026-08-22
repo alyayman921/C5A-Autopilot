@@ -5,16 +5,13 @@ int main(int argc, char* argv[]) {
     readxlsx(aircraft_file);
     aircraft_data c5a = readAircraft();
 
-    if (!readControlsFromFile("meta/controls.txt", Controls, dt, tfinal)) {
-        std::cerr << "Failed to read meta/controls.txt, Using defaults..." << std::endl;
-        Controls << 0.0, 0.0, 1000.0, 0.05;
-        dt = 0.01;
-        tfinal = 100.0;
-    }
-    if (!Autopiloted){std::cout << "Controls loaded: " << Controls.transpose() << std::endl;}
-    std::cout << "Timestep: " << dt << " s" << std::endl;
-    std::cout << "Final time: " << tfinal << " s" << std::endl;
-    std::cout << "Number of steps: " << (int)(tfinal / dt) << std::endl;
+    // if (!readControlsFromFile("meta/controls.txt", Controls, dt, tfinal)) {
+    //     std::cerr << "Failed to read meta/controls.txt, Using defaults..." << std::endl;
+    //     Controls << 0.0, 0.0, 1000.0, 0.05;
+    //     dt = 0.01;
+    //     tfinal = 100.0;
+    // }
+    // if (!Autopiloted){std::cout << "Controls loaded: " << Controls.transpose() << std::endl;}
 
 /*------------------------- Handle Inputs----------------------------------------*/
     if (argc >= 2){
@@ -26,9 +23,12 @@ int main(int argc, char* argv[]) {
             std::cout<< "Arguments    Usage\n";
             std::cout<< "---------    ---------------------------------------------------------\n";
             std::cout<< "--help       print this message\n";
+            std::cout<< "--dt         change timestep\n";
+            std::cout<< "--tf         change simulation time\n";
+            std::cout<< "--help       print this message\n";
             std::cout<< "--lin        switch to linear statespace simulator\n";
             std::cout<< "--loop       prevent the program from exiting after solving\n";
-            std::cout<< "--manual     read the control commands from the textfile controls.txt\n";
+            std::cout<< "--manual     {Currently Disabled}\n";
             std::cout<< "--pitch      overrides altitude loop straight to pitch control\n";
             std::cout<< "--roll       overrides heading loop straight to roll control\n\n";
             std::cout<< "--------------------- STM32F103C8T + Linux Only ----------------------\n";
@@ -52,9 +52,15 @@ int main(int argc, char* argv[]) {
                 std::cout<<"Prevent from Exit : True\n";
                 loop = true;
             }
+            if (arg == "--dt") {
+              dt=atof(argv[i+1]);
+            }
+            if (arg == "--tf") {
+              tfinal=atof(argv[i+1]);
+            }
             if (arg == "--manual") {
-                std::cout<<"Applying Control actions directly from text file\n";
-                Autopiloted = false;
+                // std::cout<<"Applying Control actions directly from text file\n";
+                // Autopiloted = false;
             }
             if (arg == "--pitch") {
                 std::cout<<"Skipping altitude loop\n";
@@ -79,7 +85,7 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    if(mode!='s'){
+    if(mode!='s'){ // If not test mode
         if(commands.alt_override){
             std::cout<<"Pitch Autopilot change (Degrees): ";
             std::cin >> commands.set_pitch; commands.set_pitch=commands.set_pitch*deg2rad;
@@ -99,6 +105,9 @@ int main(int argc, char* argv[]) {
     }
 
 
+    std::cout << "Timestep: " << dt << " s" << std::endl;
+    std::cout << "Final time: " << tfinal << " s" << std::endl;
+    std::cout << "Number of steps: " << (int)(tfinal / dt) << std::endl;
 /*------------------------- Problem Initialization ----------------------------------------*/
     // Initial state vector: [uvw, pqr, euler(3)]
     Eigen::Matrix<double, 9, 1> initial_state;
@@ -120,7 +129,7 @@ int main(int argc, char* argv[]) {
 
 
 /*------------------------- Solving Linear ----------------------------------------*/
-  std::cout<<"<Simulation Progress> \n";
+  std::cout<<"\n<Simulation Progress> \n";
 
   if (commands.linear){
     fullLinear lin(&Controls,&c5a, &str_h,&commands,&results);
@@ -164,7 +173,7 @@ int main(int argc, char* argv[]) {
 
 
 /*-------------------------Results ----------------------------------------*/
-    std::cout << "\n=== Final State (t=" << tfinal << "s) ===" << std::endl;
+    std::cout << "\n\n=== Final State (t=" << tfinal << "s) ===" << std::endl;
     std::cout << "Velocity ft/s (v_x, v_y, v_z): "
               << results(0) << ", " << results(1) << ", " << results(2) << std::endl;
 

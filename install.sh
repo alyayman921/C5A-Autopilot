@@ -10,8 +10,10 @@ cd /tmp
 git clone https://github.com/brechtsanders/xlsxio.git && cd xlsx*
 rm -rf build
 mkdir build && cd build && cmake -G"Unix Makefiles" ..
-make 
+make
 sudo make install
-sudo ldconfig 
+sudo ldconfig
 cd  "$current_dir"
 make clean && make
+sudo make install
+echo "Done, Now run from the terminal by running FlightSimulator"

@@ -9,12 +9,11 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 
 # Features
 - Rigid Body Dynamics simulator with RK4 solver
-- Easy Controller Implementation with transfer function class
-- State Logging to csv
+- Easy Controller Implementation with in the house Transfer Function "library"
 - Linear Simulator Implementation
-- Can work with STM32 MicroController as Control Logic (Linux Only)
-- STM32 Standalone Linear solver + controller (Linux Only)
-- For Any Aircraft, provided you add your own controllers and fix some hardcoded points
+- Mode for STM32 board as Controller logic
+- Mode STM32 Standalone Linear Simulator
+- For Any Aircraft, provided you add your dynamics and controllers
 
 ## Build From Source
 *Dependencies:*
@@ -38,51 +37,38 @@ it is critical to run this from a terminal in windows, do this in the terminal
 ## **Linux Guide:**
 [Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.6/Release_Linux_x64.zip)
 
-**or for better performance**
+**The release binaries are compiled with gcc-9 to ensure compatibility, follow this guide for best performance.**
 
 Clone This directory & cd inside of it
 ```bash
 git clone https://github.com/alyayman921/Cpp-Flight-Simulator.git && cd Cpp-Flight-Simulator
 ```
 **Install Eigen**
+Ubuntu (any debian)
 ```bash
-sudo apt update && sudo apt install libeigen3-dev # or install via your distro's package manager
-```
-### **Now you can either run the install.sh, or**
-
-**Clone and make Dependancies**
-```bash
-git clone https://github.com/brechtsanders/xlsxio.git && cd xlsx*
-# From Inside xlsxio folder
-cmake -G"Unix Makefiles" .
-make
-sudo make install
-sudo ldconfig
-cd ../
+sudo apt update && sudo apt install libeigen3-dev
 ```
 
-**Compiling**
-either do
-
+### **Now you can run the install.sh**
+script that installs the remaining libraries and compiles at the end.
 ```bash
-make clean
-make
-cp -r meta/ Release/Release_Linux_x64
+./install.sh
 ```
-
-or
-```bash
-# Back in the Main folder
-g++ flightsim.cpp -o FlightSimulator -DUSE_SERIAL -I/usr/include/eigen3 -lm -lxlsxio_read -lserial
-```
-
-The release binaries are compiled with gcc-9 to ensure compatibility, since my arch uses gcc16.1, on Ubuntu you'd have to wait 2 years or so to catch up with this version of c++ libraries
-
 
 **Run with --help and get started**
 ```bash
-./FlightSimulator --help
+FlightSimulator --help
 ```
+
+
+
+After you install with the script, if you want to compile again just do this
+```bash
+make clean && make
+sudo make install
+```
+
+
 
 ---
 
@@ -104,11 +90,12 @@ The release binaries are compiled with gcc-9 to ensure compatibility, since my a
 - This is a pseudo-Continuous Time project, using same controllers from the S domain like this:
 if a state is to be derived (multiplied by s), for the first time step we set the state_derivative = sum of non derivated states, next time step you get the state by doing state += state_derivative * dt, look at the [tf.hpp](tf.hpp) file for more info.
 
-## TODO 
+## TODO
 - [x] Make a Generalized Transfer Function class.
 - [x] Deploy controllers to an stm32 based embedded board.
+- [ ] Remove Libeigen and xlsxio
 - [ ] Attach a rendering GUI for the Simulator.
-- [x] Makefile, maybe publish to AUR?
+- [ ] Publish to AUR
 
 > [!NOTE]
 > ## Acknowledgement
@@ -120,14 +107,3 @@ if a state is to be derived (multiplied by s), for the first time step we set th
 > Ai was used in this project to do the logging and the handling of files, it was also used in developing the rk4 solver and linking it to the Rigid Body Dynamics equations.
 > this is a learning project, i'm trying to enhance my C++ skills so there's no point of prompting the ai to do it for me.
 > ai was used too in the STM32 part of the project, to help with the uncharted Drivers territory and do the donkey work that was done before, for example after setting up the communication bridge via USB CDC, ai converted the floats to certain amount of characters to send from the c++ code to stm, you can probably tell whose idea this was, it also implemented the same controllers with the euler method, since it choked on it's own saliva while trying to use the digital controllers.
-
-[^1]: o
-
-[^2]: ix
-
-[^3]: 
-
-[^4]: unc
-
-[^5]: :q
-
