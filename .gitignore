@@ -1,4 +1,5 @@
 *.zip
+Aur/
 .fuse*
 *.csv
 *.slx
