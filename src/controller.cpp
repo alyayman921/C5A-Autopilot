@@ -1,9 +1,9 @@
 #include "controller.hpp"
 
-extern double tfinal;
+extern float tfinal;
 
 
-controller::controller(Eigen::Matrix<double,4,1>* ptrControls, Eigen::Matrix<double,9,1>* ptrResults
+controller::controller(struct Matrix* ptrControls, struct Matrix* ptrResults
     ,aircraft_data *ac, flight_path *ptrstr_h,autopilot_inputs *ptrCommands){
   this->ptrControls=ptrControls;
   this->ptrstr_h=ptrstr_h;
@@ -43,7 +43,8 @@ controller::controller(Eigen::Matrix<double,4,1>* ptrControls, Eigen::Matrix<dou
   this->yaw_damper=transferFunction(2 , 2, yaw_num, yaw_den);
   this->yaw_servo=transferFunction(1 , 2, servo_num, servo_den);
 
-  *ptrControls={0,0,0,0};
+  ptrControls->data[0][0]=0; ptrControls->data[1][0]=0;
+  ptrControls->data[2][0]=0; ptrControls->data[3][0]=0;
 }
 
 controller::~controller(){
@@ -70,13 +71,14 @@ void controller::updateControllers(){
 
 /*------------------------- Controllers ----------------------------------------*/
 void controller::pitch_controller(){
-    delta_theta=(*ptrResults)(7)-ac->states0(7);
+    delta_theta=(ptrResults->data[7][0])-ac->states0.data[7][0];
     y_pitch=pitch_tf.solve(((ptrCommands->set_pitch)-delta_theta));
-    de=-(y_pitch - ((delta_theta*1.734+(*ptrResults)(4))*1.5236));
+    de=-(y_pitch - ((delta_theta*1.734+(ptrResults->data[4][0]))*1.5236));
     de=pitch_servo.solve(de);
     if (de>de_max){de=de_max;}
     if (de<de_min){de=de_min;}
-    *ptrControls={da,de,dth,dr};
+    ptrControls->data[0][0]=da; ptrControls->data[1][0]=de;
+    ptrControls->data[2][0]=dth; ptrControls->data[3][0]=dr;
 }
 
 void controller::altitude_controller(){
@@ -95,12 +97,13 @@ void controller::velocity_controller(){
       -------------------
               s
   */
-    y_vel=vel_tf.solve(((ptrCommands->set_vel)-(*ptrResults)(0)));
+    y_vel=vel_tf.solve(((ptrCommands->set_vel)-(ptrResults->data[0][0])));
     dth=throttle_valve.solve(y_vel);
     dth=engine_lag.solve(dth);
     if (dth>dth_max){dth=dth_max; vel_tf.clamp_state(dth_min, dth_max);}
     if (dth<dth_min){dth=dth_min; vel_tf.clamp_state(dth_min, dth_max);}
-    *ptrControls={da,de,dth,dr};
+    ptrControls->data[0][0]=da; ptrControls->data[1][0]=de;
+    ptrControls->data[2][0]=dth; ptrControls->data[3][0]=dr;
 }
 // -------------------------------------- LATERAL CONTROLLERS ---------------------------------------
 
@@ -111,11 +114,12 @@ void controller::roll_controller(){
     --------------          --------------
           s                     (s+15)
   */
-    da=PI_Roll.solve(((ptrCommands->set_roll)-(*ptrResults)(6)))-PD_Roll.solve((*ptrResults)(6));
+    da=PI_Roll.solve(((ptrCommands->set_roll)-(ptrResults->data[6][0])))-PD_Roll.solve((ptrResults->data[6][0]));
     da=roll_servo.solve(da);
     if (da>da_max){da=da_max;}
     if (da<da_min){da=da_min;}
-    *ptrControls={da,de,dth,dr};
+    ptrControls->data[0][0]=da; ptrControls->data[1][0]=de;
+    ptrControls->data[2][0]=dth; ptrControls->data[3][0]=dr;
 }
 void controller::yaw_controller(){
   /*
@@ -124,16 +128,17 @@ void controller::yaw_controller(){
     ---------
       (s+0.1)
   */
-    coordinated_roll=((ptrCommands->set_heading)-(*ptrResults)(8))*(ac->states0[0])/ac->g/10;
+    coordinated_roll=((ptrCommands->set_heading)-(ptrResults->data[8][0]))*(ac->states0.data[0][0])/ac->g/10;
   if (coordinated_roll>25*deg2rad){coordinated_roll=25*deg2rad;}
   if (coordinated_roll<-25*deg2rad){coordinated_roll=-25*deg2rad;}
     ptrCommands->set_roll=coordinated_roll;
     //roll_controller();
-    dr=yaw_damper.solve((*ptrResults)(5));
+    dr=yaw_damper.solve((ptrResults->data[5][0]));
     dr=yaw_servo.solve(dr);
     if (dr>dr_max){dr=dr_max;}
     if (dr<dr_min){dr=dr_min;}
-    *ptrControls={da,de,dth,dr};
+    ptrControls->data[0][0]=da; ptrControls->data[1][0]=de;
+    ptrControls->data[2][0]=dth; ptrControls->data[3][0]=dr;
 
 }
 
@@ -154,7 +159,7 @@ void controller::pack_serial_data(char buffer[256]) {
   // ---- Helper lambda for floats: exactly 9 chars with 2 decimals ----
   // Format: S DDDDD . DD (sign + 5 digits + dot + 2 decimals = 9 chars)
   // Range: ±99999.99
-  auto append_float = [&](double val) {
+  auto append_float = [&](float val) {
       // Clamp to ±99999.99
       if (val > 99999.99) val = 99999.99;
       if (val < -99999.99) val = -99999.99;
@@ -177,7 +182,7 @@ void controller::pack_serial_data(char buffer[256]) {
 
   // ---- 9 ptrResults from state vector (9 × 9 = 81 chars) ----
   for (int i = 0; i < 9; ++i) {
-      append_float((*ptrResults)(i));
+      append_float(ptrResults->data[i][0]);
   }
 
   // ---- 6 flight‑path variables (6 × 9 = 54 chars) ----
@@ -185,7 +190,7 @@ void controller::pack_serial_data(char buffer[256]) {
   // In onboard mode the STM runs the whole solve itself, so the number of
   // integration steps must match the PC's linear sim. Stash it in the
   // otherwise-unused v_tot slot (the STM recomputes v_tot each step).
-  append_float(ptrCommands->onboard ? (double)((int)(tfinal / dt)) : ptrstr_h->v_tot);
+  append_float(ptrCommands->onboard ? (float)((int)(tfinal / dt)) : ptrstr_h->v_tot);
   append_float(ptrstr_h->delta_h_dot);
   append_float(ptrstr_h->alpha);
   append_float(ptrstr_h->beta);
@@ -201,10 +206,10 @@ void controller::pack_serial_data(char buffer[256]) {
 void controller::send_states(){
 #ifdef USE_SERIAL
   if (SP->read_string(received_CA)) {
-    *ptrControls = {std::atof(received_CA),
-                  std::atof(received_CA + 9),
-                  std::atof(received_CA + 18),
-                  std::atof(received_CA + 27)};
+    ptrControls->data[0][0] = std::atof(received_CA);
+    ptrControls->data[1][0] = std::atof(received_CA + 9);
+    ptrControls->data[2][0] = std::atof(received_CA + 18);
+    ptrControls->data[3][0] = std::atof(received_CA + 27);
   }
   pack_serial_data(serial_states);
   SP->write_string(serial_states);
@@ -254,7 +259,7 @@ void controller::onboard_sim(){
     // Onboard result packet uses 11-char fields (see stm/Core/Src/main.c):
     // ! + 10 floats * 11 chars + $ = 113 bytes.
     for (int i = 0; i < 9; i++) {
-      (*ptrResults)(i) = std::atof(serial_states + i * 11);
+      ptrResults->data[i][0] = std::atof(serial_states + i * 11);
     }
     ptrstr_h->h = std::atof(serial_states + 9 * 11);
   } else {

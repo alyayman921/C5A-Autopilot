@@ -10,18 +10,18 @@ If you ever used matlab, this is close to how you define in it
 #include <iostream>
 
 extern int step;
-extern double dt;
+extern float dt;
 
 class transferFunction{
 	private:
-		double a0,a1;
-		double b0,b1;
-		double diffed=0,y=0,yd=0,rd=0;
+		float a0,a1;
+		float b0,b1;
+		float diffed=0,y=0,yd=0,rd=0;
 		int size_num,size_denum;
 
 		struct prev_store{
-			double state=0.0;
-			double state_prev=0.0;
+			float state=0.0;
+			float state_prev=0.0;
 		};
 
 		prev_store input_history;
@@ -30,10 +30,10 @@ class transferFunction{
 
 	public:
 		transferFunction();
-		transferFunction(int size_num,int size_denum,double *num, double *denum);
-		transferFunction(int size_num,int size_denum,double num, double *denum);
-		double solve(double r);
-		double diffrentiate(prev_store &t);
-		void clamp_state(double min, double max);
+		transferFunction(int size_num,int size_denum,float *num, float *denum);
+		transferFunction(int size_num,int size_denum,float num, float *denum);
+		float solve(float r);
+		float diffrentiate(prev_store &t);
+		void clamp_state(float min, float max);
 
 };

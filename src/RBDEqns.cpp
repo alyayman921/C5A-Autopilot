@@ -1,126 +1,203 @@
 #include "RBDEqns.hpp"
 
-  RBDSolve::RBDSolve(aircraft_data &ac, Eigen::Matrix<double,4,1>* Controls,flight_path *str_h ,Eigen::Matrix<double,9,1>* states){
-          this->ac = ac; this->g = ac.g; this->m = ac.m; this->I = ac.Inertia;this->z0=ac.z0;
-          this->F_g0 = ac.mg0; this->v = ac.V0;
-          this->omega = ac.omega0; this->euler = ac.euler0;
-          this->SD = ac.SD; this->CD = ac.CD;
-          this->w_dot_state = 0;
-          this->Controls = Controls;
-          this->states=states;
-          this->str_h=str_h;
-          F_aero.setZero(); F_grav.setZero();
-          F_b.setZero(); M_total.setZero();
-          str_h->h=-ac.z0;
-  }
-  void RBDSolve::eulerToRotationMatrix(){
-      double phi = euler(0); double c_phi = std::cos(phi); double s_phi = std::sin(phi);
-      double theta = euler(1); double c_theta = std::cos(theta); double s_theta = std::sin(theta);
-      double psi = euler(2); double c_psi = std::cos(psi); double s_psi = std::sin(psi);
+static void cross3(struct Matrix* out, struct Matrix* a, struct Matrix* b) {
+    out->data[0][0] = a->data[1][0] * b->data[2][0] - a->data[2][0] * b->data[1][0];
+    out->data[1][0] = a->data[2][0] * b->data[0][0] - a->data[0][0] * b->data[2][0];
+    out->data[2][0] = a->data[0][0] * b->data[1][0] - a->data[1][0] * b->data[0][0];
+}
 
-      R << c_psi * c_theta,
-            c_psi * s_theta * s_phi - s_psi * c_phi,
-            c_psi * s_theta * c_phi + s_psi * s_phi,
+/* Solves A * x = b for a 3x3 matrix A (Gaussian elimination, partial pivot). */
+static void solve3(struct Matrix* x, struct Matrix* A, struct Matrix* b) {
+    float a[3][3], bb[3];
+    for (int r = 0; r < 3; r++) {
+        bb[r] = b->data[r][0];
+        for (int c = 0; c < 3; c++) a[r][c] = A->data[r][c];
+    }
+    for (int r = 0; r < 3; r++) {
+        int p = r;
+        for (int k = r + 1; k < 3; k++)
+            if (std::fabs(a[k][r]) > std::fabs(a[p][r])) p = k;
+        if (p != r) {
+            for (int c = 0; c < 3; c++) { float t = a[r][c]; a[r][c] = a[p][c]; a[p][c] = t; }
+            float t = bb[r]; bb[r] = bb[p]; bb[p] = t;
+        }
+        for (int k = r + 1; k < 3; k++) {
+            float f = a[k][r] / a[r][r];
+            for (int c = r; c < 3; c++) a[k][c] -= f * a[r][c];
+            bb[k] -= f * bb[r];
+        }
+    }
+    float X[3];
+    for (int r = 2; r >= 0; r--) {
+        float s = bb[r];
+        for (int c = r + 1; c < 3; c++) s -= a[r][c] * X[c];
+        X[r] = s / a[r][r];
+    }
+    for (int r = 0; r < 3; r++) x->data[r][0] = X[r];
+}
 
-            s_psi * c_theta,
-            s_psi * s_theta * s_phi + c_psi * c_phi,
-            s_psi * s_theta * c_phi - c_psi * s_phi,
+RBDSolve::RBDSolve(aircraft_data &ac, struct Matrix* Controls, flight_path *str_h ,struct Matrix* states){
+        this->ac = &ac;
+        this->m = ac.m; this->g = ac.g; this->z0 = ac.z0;
+        this->v = vector(3);       mat_copy(&this->v, &ac.V0);
+        this->omega = vector(3);   mat_copy(&this->omega, &ac.omega0);
+        this->euler = vector(3);   mat_copy(&this->euler, &ac.euler0);
+        this->I = matrix(3,3);       mat_copy(&this->I, &ac.Inertia);
+        this->F_g0 = vector(3);    mat_copy(&this->F_g0, &ac.mg0);
+        this->SD = matrix(6,7);      mat_copy(&this->SD, &ac.SD);
+        this->CD = matrix(6,4);      mat_copy(&this->CD, &ac.CD);
+        this->w_dot_state = 0;
+        this->Controls = Controls;
+        this->states = states;
+        this->str_h = str_h;
+        this->v_dot = vector(3);
+        this->delta_omega_dot = vector(3);
+        this->euler_dot = vector(3);
+        this->J = matrix(3,3);
+        this->Aerodynamic_accel = vector(6);
+        this->delta_v = vector(3);
+        this->delta_omega = vector(3);
+        this->delta_F = vector(3);
+        this->delta_M = vector(3);
+        this->y = vector(9);
+        this->y_dot = vector(9);
+        this->delta_y = vector(7);
+        this->F_aero = vector(3);
+        this->F_grav = vector(3);
+        this->F_b = vector(3);
+        this->M_total = vector(3);
+        mat_set_zero(&this->F_aero); mat_set_zero(&this->F_grav);
+        mat_set_zero(&this->F_b);    mat_set_zero(&this->M_total);
+        str_h->h = -ac.z0;
+}
 
-          -s_theta,
-            c_theta * s_phi,
-            c_theta * c_phi;
-  }
+RBDSolve::~RBDSolve(){
+    mat_free_memory(&v); mat_free_memory(&v_dot); mat_free_memory(&omega);
+    mat_free_memory(&delta_omega_dot); mat_free_memory(&euler); mat_free_memory(&euler_dot);
+    mat_free_memory(&J); mat_free_memory(&I); mat_free_memory(&SD); mat_free_memory(&CD);
+    mat_free_memory(&Aerodynamic_accel); mat_free_memory(&delta_v); mat_free_memory(&delta_omega);
+    mat_free_memory(&delta_F); mat_free_memory(&delta_M); mat_free_memory(&y); mat_free_memory(&y_dot);
+    mat_free_memory(&delta_y); mat_free_memory(&F_aero); mat_free_memory(&F_grav);
+    mat_free_memory(&F_b); mat_free_memory(&F_g0); mat_free_memory(&M_total);
+}
 
-  Eigen::Matrix<double,9,1> RBDSolve::RBDEquations(Eigen::Matrix<double,9,1> y){
-      v = y.segment<3>(0);
-      omega = y.segment<3>(3);
-      euler = y.segment<3>(6);
+void RBDSolve::RBDEquations(struct Matrix y, struct Matrix* out){
+    for (i = 0; i < 3; i++){
+        v.data[i][0] = y.data[i][0];
+        omega.data[i][0] = y.data[i+3][0];
+        euler.data[i][0] = y.data[i+6][0];
+    }
 
-      // calculate forces and moments
-      delta_v = v- ac.V0;
-      delta_omega = omega-ac.omega0;
+    // calculate forces and moments
+    mat_sub(&delta_v, &v, &ac->V0);
+    mat_sub(&delta_omega, &omega, &ac->omega0);
 
-      // Build delta_states
-      delta_y(0) = delta_v(0);
-      delta_y(1) = delta_v(1);
-      delta_y(2) = delta_v(2);
-      delta_y(3) = delta_omega(0);
-      delta_y(4) = delta_omega(1);
-      delta_y(5) = delta_omega(2);
-      delta_y(6) = w_dot_state;
+    // Build delta_states
+    delta_y.data[0][0] = delta_v.data[0][0];
+    delta_y.data[1][0] = delta_v.data[1][0];
+    delta_y.data[2][0] = delta_v.data[2][0];
+    delta_y.data[3][0] = delta_omega.data[0][0];
+    delta_y.data[4][0] = delta_omega.data[1][0];
+    delta_y.data[5][0] = delta_omega.data[2][0];
+    delta_y.data[6][0] = w_dot_state;
 
-      // Calculate Aerodynamic Accelerations
-      Aerodynamic_accel = SD * delta_y + CD * (*Controls);
+    // Calculate Aerodynamic Accelerations
+    struct Matrix tmp1 = {0};
+    mat_mult(SD, delta_y, &tmp1);
+    struct Matrix tmp2 = {0};
+    mat_mult(CD, *Controls, &tmp2);
+    mat_add(&Aerodynamic_accel, &tmp1, &tmp2);
+    mat_free_memory(&tmp1); mat_free_memory(&tmp2);
 
-      // Compute aerodynamic forces
-      for (i = 0; i < 3; i++){
-          delta_F[i] = Aerodynamic_accel[i] * m;
-          F_aero[i] = delta_F[i];  // Store aerodynamic forces
-      }
-      // Compute moments
-      for (i = 3; i < 6; i++){
-          delta_M[i-3] = Aerodynamic_accel[i] * I.coeff(i-3, i-3);
-      }
-      M_total = delta_M;
+    // Compute aerodynamic forces
+    for (i = 0; i < 3; i++){
+        delta_F.data[i][0] = Aerodynamic_accel.data[i][0] * m;
+        F_aero.data[i][0] = delta_F.data[i][0];  // Store aerodynamic forces
+    }
+    // Compute moments
+    for (i = 3; i < 6; i++){
+        delta_M.data[i-3][0] = Aerodynamic_accel.data[i][0] * I.data[i-3][i-3];
+    }
+    mat_copy(&M_total, &delta_M);
 
-      // Compute gravitational forces
-      F_grav(0) = -m * g * sin(euler[1]) - F_g0[0];
-      F_grav(1) =  m * g * cos(euler[1]) * sin(euler[0]) - F_g0[1];
-      F_grav(2) =  m * g * cos(euler[1]) * cos(euler[0]) - F_g0[2];
+    // Compute gravitational forces
+    F_grav.data[0][0] = -m * g * std::sin(euler.data[1][0]) - F_g0.data[0][0];
+    F_grav.data[1][0] =  m * g * std::cos(euler.data[1][0]) * std::sin(euler.data[0][0]) - F_g0.data[1][0];
+    F_grav.data[2][0] =  m * g * std::cos(euler.data[1][0]) * std::cos(euler.data[0][0]) - F_g0.data[2][0];
 
-      // Total body forces
-      F_b = delta_F + F_grav;
+    // Total body forces
+    mat_add(&F_b, &delta_F, &F_grav);
 
-      // linear newton
-      v_dot = F_b / m - omega.cross(v); // Matlab 6DOF Abb
+    // linear newton
+    struct Matrix Fb_scaled = vector(3);
+    mat_scalar_mul(&Fb_scaled, &F_b, 1.0f / (float)m);
+    struct Matrix cross1 = vector(3);
+    cross3(&cross1, &omega, &v);
+    mat_sub(&v_dot, &Fb_scaled, &cross1);
+    mat_free_memory(&Fb_scaled); mat_free_memory(&cross1);
 
-      // Angular Newton
-      delta_omega_dot = delta_M - omega.cross(I * omega);
-      delta_omega_dot = I.ldlt().solve(delta_omega_dot);
+    // Angular Newton
+    struct Matrix Iomega = {0};
+    mat_mult(I, omega, &Iomega);
+    struct Matrix cross2 = vector(3);
+    cross3(&cross2, &omega, &Iomega);
+    struct Matrix diff = vector(3);
+    mat_sub(&diff, &delta_M, &cross2);
+    solve3(&delta_omega_dot, &I, &diff);
+    mat_free_memory(&Iomega); mat_free_memory(&cross2); mat_free_memory(&diff);
 
-      // Euler Kinematics
-      cos_theta = std::cos(euler[1]);
-      if (std::abs(cos_theta) < eps) cos_theta = eps;
+    // Euler Kinematics
+    cos_theta = std::cos(euler.data[1][0]);
+    if (std::fabs(cos_theta) < eps) cos_theta = eps;
 
-      J << 1, sin(euler[0])*tan(euler[1]), cos(euler[0])*tan(euler[1]),
-            0, cos(euler[0]),               -sin(euler[0]),
-            0, sin(euler[0])/cos_theta,      cos(euler[0])/cos_theta;
-      euler_dot = J * omega;
+    J.data[0][0] = 1; J.data[0][1] = std::sin(euler.data[0][0]) * std::tan(euler.data[1][0]); J.data[0][2] = std::cos(euler.data[0][0]) * std::tan(euler.data[1][0]);
+    J.data[1][0] = 0; J.data[1][1] = std::cos(euler.data[0][0]);                                 J.data[1][2] = -std::sin(euler.data[0][0]);
+    J.data[2][0] = 0; J.data[2][1] = std::sin(euler.data[0][0]) / cos_theta;                       J.data[2][2] = std::cos(euler.data[0][0]) / cos_theta;
+    mat_mult(J, omega, &euler_dot);
 
-      // Build y_dot (9x1)
-      y_dot(0) = v_dot(0);
-      y_dot(1) = v_dot(1);
-      y_dot(2) = v_dot(2);
-      y_dot(3) = delta_omega_dot(0);
-      y_dot(4) = delta_omega_dot(1);
-      y_dot(5) = delta_omega_dot(2);
-      y_dot(6) = euler_dot(0);
-      y_dot(7) = euler_dot(1);
-      y_dot(8) = euler_dot(2);
+    // Build y_dot (9x1)
+    for (i = 0; i < 3; i++) y_dot.data[i][0] = v_dot.data[i][0];
+    for (i = 0; i < 3; i++) y_dot.data[i+3][0] = delta_omega_dot.data[i][0];
+    for (i = 0; i < 3; i++) y_dot.data[i+6][0] = euler_dot.data[i][0];
 
+    mat_copy(out, &y_dot);
+}
 
-      return y_dot;
-  }
+void RBDSolve::rk4Solver(){
+    mat_copy(&y, states);
+    struct Matrix k1 = vector(9); RBDEquations(y, &k1);
 
-  void RBDSolve::rk4Solver(){
-      double t = step * dt;
-      double t_half = t + dt/2.0f;
-      double t_full = t + dt;
-      y = *states;
-      Eigen::Matrix<double,9,1> k1, k2, k3, k4;
+    struct Matrix tmp = vector(9);
+    mat_scalar_mul(&tmp, &k1, 0.5f * (float)dt);
+    struct Matrix y2 = vector(9); mat_add(&y2, &y, &tmp);
+    struct Matrix k2 = vector(9); RBDEquations(y2, &k2);
 
-      k1 = RBDSolve::RBDEquations(y);
-      k2 = RBDSolve::RBDEquations(y + 0.5f * dt * k1);
-      k3 = RBDSolve::RBDEquations(y + 0.5f * dt * k2);
-      k4 = RBDSolve::RBDEquations(y + dt * k3);
-      y = y + dt * (k1 + 2.0f * k2 + 2.0f * k3 + k4) / 6.0f; // New State Vector
-      // h_calc(y);
-      str_h->alpha=std::atan2(y(2),y(0));
-      str_h->v_tot=std::hypot(y(0),y(2));
-      str_h->beta=std::atan2(y(1),str_h->v_tot);
-      str_h->gamma=y(7)-str_h->alpha;
-      str_h->delta_h_dot=str_h->v_tot*std::sin(str_h->gamma);
-      str_h->h+=dt*str_h->delta_h_dot;
-      w_dot_state = v_dot(2);
-      *states=y;
-  }
+    mat_scalar_mul(&tmp, &k2, 0.5f * (float)dt);
+    struct Matrix y3 = vector(9); mat_add(&y3, &y, &tmp);
+    struct Matrix k3 = vector(9); RBDEquations(y3, &k3);
+
+    mat_scalar_mul(&tmp, &k3, (float)dt);
+    struct Matrix y4 = vector(9); mat_add(&y4, &y, &tmp);
+    struct Matrix k4 = vector(9); RBDEquations(y4, &k4);
+
+    struct Matrix sum = vector(9);
+    mat_scalar_mul(&tmp, &k2, 2.0f);
+    mat_add(&sum, &k1, &tmp);
+    mat_scalar_mul(&tmp, &k3, 2.0f);
+    mat_add(&sum, &sum, &tmp);
+    mat_add(&sum, &sum, &k4);
+    mat_scalar_mul(&sum, &sum, (float)dt / 6.0f);
+    mat_add(&y, &y, &sum);
+
+    mat_free_memory(&k1); mat_free_memory(&k2); mat_free_memory(&k3); mat_free_memory(&k4);
+    mat_free_memory(&tmp); mat_free_memory(&y2); mat_free_memory(&y3); mat_free_memory(&y4); mat_free_memory(&sum);
+
+    str_h->alpha = std::atan2(y.data[2][0], y.data[0][0]);
+    str_h->v_tot = std::hypot(y.data[0][0], y.data[2][0]);
+    str_h->beta = std::atan2(y.data[1][0], str_h->v_tot);
+    str_h->gamma = y.data[7][0] - str_h->alpha;
+    str_h->delta_h_dot = str_h->v_tot * std::sin(str_h->gamma);
+    str_h->h += dt * str_h->delta_h_dot;
+    w_dot_state = v_dot.data[2][0];
+    mat_copy(states, &y);
+}

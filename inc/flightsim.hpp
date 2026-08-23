@@ -9,24 +9,22 @@ the solvers, call the controllers after each step of solving
 
 #include <iostream>
 #include <chrono>
-#include <Eigen/Core>
-#include <Eigen/Dense>
-
-#include "structs.h"
-// #include "read_controls.hpp"
-#include "readxlsx.h"
+#include "matrix.h"
+#ifdef USE_XLSX
+#include "fileHandling.h"
+#endif
 #include "aircraft_data.hpp"
 #include "RBDEqns.hpp"
 #include "controller.hpp"
 #include "linear_sim.hpp"
 
-double pi=3.1415926;
-double deg2rad=pi/180.0;
-double rad2deg=180.0/pi;
+float pi=3.1415926;
+float deg2rad=pi/180.0;
+float rad2deg=180.0/pi;
 
 int step=0;
-double dt = 0.01;
-double tfinal = 100.0;
+float dt = 0.01;
+float tfinal = 100.0;
 int progress_percent=0;
 
 bool loop = false;
@@ -36,6 +34,6 @@ char mode='0';
 autopilot_inputs commands;
 flight_path str_h;
 
-const char aircraft_file[] = "/usr/share/3lymnFlightSimulator/meta/C5A.xlsx";
-Eigen::Matrix<double, 4, 1> Controls;
+const char aircraft_file[] = "~/.local/share/3lymnFlightSimulator/meta/C5A.xlsx";
+struct Matrix Controls;
 int main(int argc, char* argv[]);

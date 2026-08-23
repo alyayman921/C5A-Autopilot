@@ -2,18 +2,15 @@
 
 int main(int argc, char* argv[]) {
 /*------------------------- Import Files ----------------------------------------*/
-    readxlsx(aircraft_file);
+
+    // read the aircraft spreadsheet (xlsx build only); otherwise hardcoded data is used
+#ifdef USE_XLSX
+    fileHandling(aircraft_file);
+#endif
     aircraft_data c5a = readAircraft();
 
-    // if (!readControlsFromFile("meta/controls.txt", Controls, dt, tfinal)) {
-    //     std::cerr << "Failed to read meta/controls.txt, Using defaults..." << std::endl;
-    //     Controls << 0.0, 0.0, 1000.0, 0.05;
-    //     dt = 0.01;
-    //     tfinal = 100.0;
-    // }
-    // if (!Autopiloted){std::cout << "Controls loaded: " << Controls.transpose() << std::endl;}
-
 /*------------------------- Handle Inputs----------------------------------------*/
+
     if (argc >= 2){
         std::string arg = argv[1];
         if (arg == "--help") {
@@ -22,27 +19,29 @@ int main(int argc, char* argv[]) {
             std::cout<< "\n";
             std::cout<< "Arguments    Usage\n";
             std::cout<< "---------    ---------------------------------------------------------\n";
+            std::cout<< "\n";
             std::cout<< "--help       print this message\n";
             std::cout<< "--dt         change timestep\n";
-            std::cout<< "--tf         change simulation time\n";
-            std::cout<< "--help       print this message\n";
+            std::cout<< "--tf         change simulation time\n\n";
             std::cout<< "--lin        switch to linear statespace simulator\n";
             std::cout<< "--loop       prevent the program from exiting after solving\n";
             std::cout<< "--manual     {Currently Disabled}\n";
             std::cout<< "--pitch      overrides altitude loop straight to pitch control\n";
             std::cout<< "--roll       overrides heading loop straight to roll control\n\n";
-            std::cout<< "--------------------- STM32F103C8T + Linux Only ----------------------\n";
+            std::cout<< "---------    -------- STM32F103C8T + Linux Only ----------------------\n";
+            std::cout<< "\n";
             std::cout<< "--ext        use external Micorcontroller as aircraft controller\n";
             std::cout<< "--onboard    solve the linear sim on the STM\n";
             return 0;
         }
+
         for(int i=0;i<argc;i++){
             arg=argv[i];
             if (arg == "test"){
               mode='s'; // skip
               commands.set_alt=1000-c5a.z0;
               commands.set_heading=30*deg2rad;
-              commands.set_vel=80;commands.set_vel += c5a.V0(0);
+              commands.set_vel=80;commands.set_vel += c5a.V0.data[0][0];
               std::cout<<"alt set: "<<commands.set_alt<<'\n';
               std::cout<<"heading set: "<<commands.set_heading*rad2deg<<'\n';
               std::cout<<"vel set: "<<commands.set_vel<<'\n';
@@ -85,9 +84,11 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+
     if(mode!='s'){ // If not test mode
         if(commands.alt_override){
             std::cout<<"Pitch Autopilot change (Degrees): ";
+            std::cout<<"hi ya bibinos";
             std::cin >> commands.set_pitch; commands.set_pitch=commands.set_pitch*deg2rad;
         }else{
             std::cout<<"Altitude Change (ft): ";
@@ -101,22 +102,31 @@ int main(int argc, char* argv[]) {
             std::cin >> commands.set_heading; commands.set_heading=commands.set_heading*deg2rad;
         }
       std::cout<<"Velocity Autopilot change (ft/s): ";
-      std::cin >> commands.set_vel ;commands.set_vel += c5a.V0(0);
+      std::cin >> commands.set_vel ;commands.set_vel += c5a.V0.data[0][0];
     }
 
 
     std::cout << "Timestep: " << dt << " s" << std::endl;
     std::cout << "Final time: " << tfinal << " s" << std::endl;
     std::cout << "Number of steps: " << (int)(tfinal / dt) << std::endl;
+
 /*------------------------- Problem Initialization ----------------------------------------*/
+
     // Initial state vector: [uvw, pqr, euler(3)]
-    Eigen::Matrix<double, 9, 1> initial_state;
-    initial_state << c5a.V0(0), c5a.V0(1), c5a.V0(2),
-                      c5a.omega0(0), c5a.omega0(1), c5a.omega0(2),
-                      c5a.euler0(0), c5a.euler0(1), c5a.euler0(2);
+    Controls = vector(4);
+    struct Matrix initial_state = vector(9);
+    initial_state.data[0][0]=c5a.V0.data[0][0];
+    initial_state.data[1][0]=c5a.V0.data[1][0];
+    initial_state.data[2][0]=c5a.V0.data[2][0];
+    initial_state.data[3][0]=c5a.omega0.data[0][0];
+    initial_state.data[4][0]=c5a.omega0.data[1][0];
+    initial_state.data[5][0]=c5a.omega0.data[2][0];
+    initial_state.data[6][0]=c5a.euler0.data[0][0];
+    initial_state.data[7][0]=c5a.euler0.data[1][0];
+    initial_state.data[8][0]=c5a.euler0.data[2][0];
     int N_steps = (int)(tfinal / dt);
-    Eigen::Matrix<double,9,1> results;
-    results=initial_state;
+    struct Matrix results = vector(9);
+    mat_copy(&results, &initial_state);
     // Initialize the controller
     controller c(&Controls,&results,&c5a,&str_h,&commands);
     auto prev =std::chrono::steady_clock::now();
@@ -175,10 +185,10 @@ int main(int argc, char* argv[]) {
 /*-------------------------Results ----------------------------------------*/
     std::cout << "\n\n=== Final State (t=" << tfinal << "s) ===" << std::endl;
     std::cout << "Velocity ft/s (v_x, v_y, v_z): "
-              << results(0) << ", " << results(1) << ", " << results(2) << std::endl;
+              << results.data[0][0] << ", " << results.data[1][0] << ", " << results.data[2][0] << std::endl;
 
     std::cout << "Euler angles in Degrees (phi, theta, psi): "
-              << (float)results(6)*rad2deg << ", " << (float)results(7)*rad2deg << ", " << (float)results(8)*rad2deg << std::endl;
+              << (float)results.data[6][0]*rad2deg << ", " << (float)results.data[7][0]*rad2deg << ", " << (float)results.data[8][0]*rad2deg << std::endl;
 
     std::cout << "Final Altitude: "<<str_h.h<<"\n";
 
@@ -189,9 +199,9 @@ int main(int argc, char* argv[]) {
     }
 #endif
     auto now =std::chrono::steady_clock::now();
-    const std::chrono::duration<double> elapsed_seconds{now-prev};
+    const std::chrono::duration<float> elapsed_seconds{now-prev};
     float elapsed= (float) elapsed_seconds.count();
-    float RTF = (double)tfinal/elapsed_seconds.count();
+    float RTF = (float)tfinal/elapsed_seconds.count();
     std::cout<<"Simulation Finished in "<<elapsed<<" With a RTF " <<RTF<<std::endl;
 
     if (loop){

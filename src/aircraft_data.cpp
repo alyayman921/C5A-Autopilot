@@ -1,102 +1,160 @@
 #include "aircraft_data.hpp"
+#include <cmath>
 
-aircraft_data readAircraft(){
-  aircraft_data d;
-  // States Node
-  for(int i=5;i<8;i++){
-    d.V0[i-5]=B[i];
-    d.states0[i-5]=B[i];
+#ifndef USE_XLSX
+static void fillM(struct Matrix *M, int m, int n, const float *v) {
+    if (n == 1) *M = vector(m);
+    else if (m == 1) *M = vec_row(n);
+    else *M = matrix(m, n);
+    for (int i = 0; i < m; i++)
+        for (int j = 0; j < n; j++)
+            M->data[i][j] = v[i * n + j];
+}
+#endif
 
-  }
-  d.Vtotal=sqrt(pow(d.V0[0],2)+pow(d.V0[1],2)+pow(d.V0[2],2));
-  d.theta0=B[12]; // rad
-  d.m=B[52];d.g=B[53];
-  d.mg0 << -sin(d.theta0) , 0 , cos(d.theta0);
-  d.mg0=d.m * d.g * d.mg0;
-  d.z0=B[16];
-  for (int i=8;i<11;i++){
-    d.omega0[i-8]=B[i];
-    d.states0[i-8+3]=B[i];
-  }
-  for (int i=11;i<14;i++){
-    d.euler0[i-11]=B[i];
-    d.states0[i-11+6]=B[i];
-  }
-  for(int i=54;i<58;i++){   // ixx iyy izz ixz
-  d.Inertia_temp[i-54] = B[i];
-  }
+#ifdef USE_XLSX
+#include <Eigen/Dense>
+template <int R, int C>
+static void eigenToMat(struct Matrix *M, const Eigen::Matrix<float, R, C> &E) {
+    *M = matrix(R, C);
+    for (int i = 0; i < R; i++)
+        for (int j = 0; j < C; j++)
+            M->data[i][j] = E(i, j);
+}
+#endif
 
-  d.Inertia<< d.Inertia_temp[0],      0,            -d.Inertia_temp[3],
-                    0,          d.Inertia_temp[1],        0,
-              -d.Inertia_temp[3],      0 ,            d.Inertia_temp[2];
+aircraft_data readAircraft() {
+    aircraft_data d;
+#ifdef USE_XLSX
+    // ---- usual path: read spreadsheet, compute with Eigen, store into struct Matrix ----
+    float V0[3] = {B[5], B[6], B[7]};
+    float omega0[3] = {B[8], B[9], B[10]};
+    float euler0[3] = {B[11], B[12], B[13]};
+    float states0[9] = {B[5], B[6], B[7], B[8], B[9], B[10], B[11], B[12], B[13]};
+    float Vtotal = sqrt(V0[0]*V0[0] + V0[1]*V0[1] + V0[2]*V0[2]);
+    float m = B[52], g = B[53];
+    float theta0 = B[12];
+    float z0 = B[16];
+    float mg0[3] = {m * g * -sin(theta0), 0, m * g * cos(theta0)};
 
-  // Long Stability Derivatives
-  d.Xu=B[22];d.Zu=B[23];d.Mu=B[24];
-  d.Xw=B[25];d.Zw=B[26];d.Mw=B[27];
-  d.Zwd=B[28];d.Zq=B[29];d.Mwd=B[30];
-  d.Mq=B[31];d.Xde=B[32];d.Zde=B[33];
-  d.Mde=B[34];d.Xdth=B[35];d.Zdth=B[36];d.Mdth=B[37];
+    float Ixx = B[54], Iyy = B[55], Izz = B[56], Ixz = B[57];
+    Eigen::Matrix<float,3,3> eInertia;
+    eInertia << Ixx, 0, -Ixz,
+                0, Iyy, 0,
+                -Ixz, 0, Izz;
 
-  // Lat Stability Derivatives
-  for(int i=38;i<52;i++){
-    d.SD_Lat_dash[i-38] = B[i];
-    //std::cout << B[i];
-  }
+    float Xu=B[22],Zu=B[23],Mu=B[24],Xw=B[25],Zw=B[26],Mw=B[27],
+           Zwd=B[28],Zq=B[29],Mwd=B[30],Mq=B[31],Xde=B[32],Zde=B[33],
+           Mde=B[34],Xdth=B[35],Zdth=B[36],Mdth=B[37];
 
-  d.Yda=B[46];d.Ydr=B[47];
-  d.G=1/(1-(pow(d.Inertia_temp[3],2)/(d.Inertia_temp[0]*d.Inertia_temp[2])));
-  d.Yv = d.SD_Lat_dash[0];d.Yb = d.SD_Lat_dash[1];d.LB = d.SD_Lat_dash[2];
-  d.NB = d.SD_Lat_dash[3];d.LP = d.SD_Lat_dash[4];d.NP = d.SD_Lat_dash[5];
-  d.LR = d.SD_Lat_dash[6];d.NR = d.SD_Lat_dash[7];d.L_DA = d.SD_Lat_dash[10];
-  d.N_DA = d.SD_Lat_dash[11];d.L_DR = d.SD_Lat_dash[12];d.N_DR = d.SD_Lat_dash[13];
-  d.lat_dash << d.LB, d.NB, d.LP, d.NP, d.LR, d.NR, d.L_DA, d.N_DA, d.L_DR, d.N_DR;
+    float SD_Lat_dash[14];
+    for (int i=38;i<52;i++) SD_Lat_dash[i-38]=B[i];
 
-  d.T << d.G,d.G * d.Inertia_temp[3] / d.Inertia_temp[0], 0, 0, 0, 0, 0, 0, 0, 0,
-       d.G * d.Inertia_temp[3] / d.Inertia_temp[2], d.G,0, 0, 0, 0, 0, 0, 0, 0,
-       0,  0,d.G, d.G * d.Inertia_temp[3] / d.Inertia_temp[0], 0, 0, 0, 0, 0, 0,
-       0,  0,d.G * d.Inertia_temp[3] / d.Inertia_temp[2], d.G, 0, 0, 0, 0, 0, 0,
-       0,  0,0, 0, d.G, d.G * d.Inertia_temp[3] / d.Inertia_temp[0], 0, 0, 0, 0,
-       0,  0,0, 0, d.G * d.Inertia_temp[3] / d.Inertia_temp[2], d.G, 0, 0, 0, 0,
-       0,  0,0, 0, 0, 0, d.G, d.G * d.Inertia_temp[3] / d.Inertia_temp[0], 0, 0,
-       0,  0,0, 0, 0, 0, d.G * d.Inertia_temp[3] / d.Inertia_temp[2], d.G, 0, 0,
-       0,  0,0, 0, 0, 0, 0, 0, d.G, d.G * d.Inertia_temp[3] / d.Inertia_temp[0],
-       0,  0,0, 0, 0, 0, 0, 0, d.G * d.Inertia_temp[3] / d.Inertia_temp[2], d.G;
-  // lat temp = T dash-1
-  d.Lat_dash=d.T.lu().solve(d.lat_dash);
-  d.SD_Lat << d.Yv,
-              d.Yb, // 1
-              d.Lat_dash[0],//LB_dash 2
-              d.Lat_dash[1],//NB_dash 3
-              d.Lat_dash[2],//LP_dash 4
-              d.Lat_dash[3],//NP_dash 5
-              d.Lat_dash[4],//LR_dash 6
-              d.Lat_dash[5],//NR_dash 7
-              d.Yda,
-              d.Ydr,
-              d.Lat_dash[6],//L_DA_dash 10
-              d.Lat_dash[7],//N_DA_dash 11
-              d.Lat_dash[8],//L_DR_dash 12
-              d.Lat_dash[9];//N_DR_dash 13
+    float Yda=B[46],Ydr=B[47];
+    float G = 1/(1 - (Ixz*Ixz)/(Ixx*Izz));
+    float Yv=SD_Lat_dash[0],Yb=SD_Lat_dash[1],LB=SD_Lat_dash[2],NB=SD_Lat_dash[3],
+           LP=SD_Lat_dash[4],NP=SD_Lat_dash[5],LR=SD_Lat_dash[6],NR=SD_Lat_dash[7],
+           L_DA=SD_Lat_dash[10],N_DA=SD_Lat_dash[11],L_DR=SD_Lat_dash[12],N_DR=SD_Lat_dash[13];
 
-  d.Lv=d.SD_Lat[2]/d.Vtotal;d.Nv=d.SD_Lat[3]/d.Vtotal;
-  d.Yv = d.SD_Lat[0];d.Yb = d.SD_Lat[1];d.LB = d.SD_Lat[2];
-  d.NB = d.SD_Lat[3];d.LP = d.SD_Lat[4];d.NP = d.SD_Lat[5];
-  d.LR = d.SD_Lat[6];d.NR = d.SD_Lat[7];d.L_DA = d.SD_Lat[10];
-  d.N_DA = d.SD_Lat[11];d.L_DR = d.SD_Lat[12];d.N_DR = d.SD_Lat[13];
+    Eigen::Matrix<float,10,10> T;
+    T << G, G*Ixz/Ixx, 0,0,0,0,0,0,0,0,
+         G*Ixz/Izz, G, 0,0,0,0,0,0,0,0,
+         0,0,G, G*Ixz/Ixx, 0,0,0,0,0,0,
+         0,0,G*Ixz/Izz, G, 0,0,0,0,0,0,
+         0,0,0,0,G, G*Ixz/Ixx, 0,0,0,0,
+         0,0,0,0,G*Ixz/Izz, G, 0,0,0,0,
+         0,0,0,0,0,0,G, G*Ixz/Ixx, 0,0,
+         0,0,0,0,0,0,G*Ixz/Izz, G, 0,0,
+         0,0,0,0,0,0,0,0,G, G*Ixz/Ixx,
+         0,0,0,0,0,0,0,0,G*Ixz/Izz, G;
 
-  // SD Matrix Construction
-  d.SD << d.Xu, 0,    d.Xw, 0,    0, 0, 0,
-        0,    d.Yv, 0,    0,    0, 0, 0,
-        d.Zu, 0,    d.Zw, 0,    d.Zq, 0, d.Zwd,
-        0,    d.Lv, 0,    d.LP, 0, d.LR, 0,
-        d.Mu, 0,    d.Mw, 0,    d.Mq, 0, d.Mwd,
-        0,    d.Nv, 0,    d.NP, 0, d.NR, 0;
-  d.CD << 0, d.Xde, d.Xdth, 0,
-          d.Yda, 0, 0 , d.Ydr,
-          0, d.Zde, d.Zdth,0,
-          d.L_DA, 0,0,d.L_DR,
-          0,d.Mde ,d.Mdth , 0,
-          d.N_DA, 0, 0, d.N_DR;
-  //std::cout<<d.SD<<std::endl;std::cout<<d.CD<<std::endl;
-return d;
+    Eigen::Matrix<float,10,1> elat_dash;
+    elat_dash << LB, NB, LP, NP, LR, NR, L_DA, N_DA, L_DR, N_DR;
+    Eigen::Matrix<float,10,1> eLat_dash = T.lu().solve(elat_dash);
+
+    float Lv=eLat_dash[0]/Vtotal, Nv=eLat_dash[1]/Vtotal;
+
+    Eigen::Matrix<float,11,1> eSD_Lat;
+    eSD_Lat << Yv, eLat_dash[0], eLat_dash[1], eLat_dash[2], eLat_dash[3],
+               eLat_dash[4], eLat_dash[5], L_DA, N_DA, L_DR, N_DR;
+
+    Eigen::Matrix<float,6,7> eSD;
+    eSD << Xu, 0, Xw, 0, 0, 0, 0,
+           0, Yv, 0, 0, 0, 0, 0,
+           Zu, 0, Zw, 0, Zq, 0, Zwd,
+           0, Lv, 0, LP, 0, LR, 0,
+           Mu, 0, Mw, 0, Mq, 0, Mwd,
+           0, Nv, 0, NP, 0, NR, 0;
+
+    Eigen::Matrix<float,6,4> eCD;
+    eCD << 0, Xde, Xdth, 0,
+           Yda, 0, 0, Ydr,
+           0, Zde, Zdth, 0,
+           L_DA, 0, 0, L_DR,
+           0, Mde, Mdth, 0,
+           N_DA, 0, 0, N_DR;
+
+    Eigen::Matrix<float,3,1> eV0; eV0 << V0[0], V0[1], V0[2];
+    Eigen::Matrix<float,3,1> eomega0; eomega0 << omega0[0], omega0[1], omega0[2];
+    Eigen::Matrix<float,3,1> eeuler0; eeuler0 << euler0[0], euler0[1], euler0[2];
+    Eigen::Matrix<float,9,1> estates0; estates0 << states0[0], states0[1], states0[2], states0[3], states0[4], states0[5], states0[6], states0[7], states0[8];
+    Eigen::Matrix<float,3,1> emg0; emg0 << mg0[0], mg0[1], mg0[2];
+
+    eigenToMat(&d.V0, eV0);
+    eigenToMat(&d.omega0, eomega0);
+    eigenToMat(&d.euler0, eeuler0);
+    eigenToMat(&d.states0, estates0);
+    eigenToMat(&d.mg0, emg0);
+    eigenToMat(&d.Inertia, eInertia);
+    eigenToMat(&d.SD, eSD);
+    eigenToMat(&d.CD, eCD);
+
+    d.Vtotal = Vtotal;
+    d.m = m;
+    d.g = g;
+    d.theta0 = theta0;
+    d.z0 = z0;
+#else
+    // ---- hardcoded path: matrix library only, no Eigen ----
+    float V0[3] = {743.6104248f, 0, 45.48116195f};
+    float omega0[3] = {0, 0, 0};
+    float euler0[3] = {0, 0.06108652382f, 0};
+    float states0[9] = {743.6104248f, 0, 45.48116195f, 0, 0, 0, 0, 0.06108652382f, 0};
+    float mg0[3] = {-39950.10322f, 0, 653178.414f};
+    float inertia[9] = {27800000.f, 0, -2460000.f,
+                        0, 31800000.f, 0,
+                        -2460000.f, 0, 56200000.f};
+    float SD[42] = {
+        -0.00379f, 0, 0.0304f, 0, 0, 0, 0,
+        0, -0.0636f, 0, 0, 0, 0, 0,
+        -0.0605f, 0, -0.427f, 0, 0, 0, 0,
+        0, -0.001477814688f, 0, -0.706f, 0, 0.233f, 0,
+        -0.000233f, 0, -0.00176f, 0, -0.506f, 0, -0.000182f,
+        0, 0.0003815758676f, 0, -0.0776f, 0, -0.0991f, 0
+    };
+    float CD[24] = {
+        0, 1, 4.91e-05f, 0,
+        -5.22e-05f, 0, 0, 0.0091f,
+        0, -16.4f, -1.72e-06f, 0,
+        0.298f, 0, 0, 0.112f,
+        0, -0.941f, 1.42e-07f, 0,
+        0.00618f, 0, 0, -0.324f
+    };
+
+    fillM(&d.V0, 3, 1, V0);
+    fillM(&d.omega0, 3, 1, omega0);
+    fillM(&d.euler0, 3, 1, euler0);
+    fillM(&d.states0, 9, 1, states0);
+    fillM(&d.mg0, 3, 1, mg0);
+    fillM(&d.Inertia, 3, 3, inertia);
+    fillM(&d.SD, 6, 7, SD);
+    fillM(&d.CD, 6, 4, CD);
+
+    d.Vtotal = 745;
+    d.m = 20339.3418;
+    d.g = 32.17405;
+    d.theta0 = 0.06108652382;
+    d.z0 = -40000;
+#endif
+    return d;
 }

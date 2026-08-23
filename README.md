@@ -17,16 +17,14 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 
 ## Build From Source
 *Dependencies:*
+%%
 - [XLSX I/O C library](https://github.com/brechtsanders/xlsxio).
 - C++ Eigen, most likely preinstalled in your distro, can be downloaded and put in the project directory, but you'll have to do some manual renaming in the header files.
+%%
 - [Libserial](https://github.com/crayzeewulf/libserial), Self Explanatory, not available for windows.
 ## **Windows Guide**
-1st of all, glad i found the last windows user alive
-
-Serial Library is not for windows, so throw that STM32 away
-
+Serial Library is not for windows
 [Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.6/Release_Windows_x64.zip)
-
 
 it is critical to run this from a terminal in windows, do this in the terminal
 ```powershell

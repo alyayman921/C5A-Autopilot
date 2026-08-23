@@ -1,6 +1,6 @@
 #include "tf.hpp"
 transferFunction::transferFunction(){}
-transferFunction::transferFunction(int size_num,int size_denum,double *num, double *denum){
+transferFunction::transferFunction(int size_num,int size_denum,float *num, float *denum){
   // general constructor
   this->size_num= size_num;
   this->size_denum= size_denum;
@@ -22,7 +22,7 @@ transferFunction::transferFunction(int size_num,int size_denum,double *num, doub
   }
 
 }
-transferFunction::transferFunction(int size_num,int size_denum,double num, double *denum){
+transferFunction::transferFunction(int size_num,int size_denum,float num, float *denum){
   // Constructor for simple lag
   this->size_num= size_num;
   this->size_denum= size_denum;
@@ -42,7 +42,7 @@ transferFunction::transferFunction(int size_num,int size_denum,double num, doubl
 
 }
 
-double transferFunction::solve(double r){
+float transferFunction::solve(float r){
   // Simple Lag case
   if (size_num == 1 && size_denum == 2){
     if (step<1){
@@ -76,7 +76,7 @@ double transferFunction::solve(double r){
   return 0;
 }
 
-double transferFunction::diffrentiate(prev_store &t){
+float transferFunction::diffrentiate(prev_store &t){
   if (step<1){
     return 0.00;
   }else{
@@ -87,7 +87,7 @@ double transferFunction::diffrentiate(prev_store &t){
   }
 }
 
-void transferFunction::clamp_state(double min, double max){
+void transferFunction::clamp_state(float min, float max){
   if (y < min) y = min;
   if (y > max) y = max;
 }

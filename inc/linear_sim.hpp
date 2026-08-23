@@ -5,35 +5,34 @@ matrices, has faulty B_long matrix so no control in the throttle
 #pragma once
 
 #include <iostream>
-#include <Eigen/Core>
-#include <Eigen/Dense>
 #include "structs.h"
+#include "matrix.h"
 
-extern double dt;
+extern float dt;
 
 class fullLinear{
   private:
     struct{
-      Eigen::Matrix<double,4,1> x_long;
-      Eigen::Matrix<double,5,1> x_lat;
-      Eigen::Matrix<double,4,1> xd_long;
-      Eigen::Matrix<double,5,1> xd_lat;
+      struct Matrix x_long;
+      struct Matrix x_lat;
+      struct Matrix xd_long;
+      struct Matrix xd_lat;
     }lsh;
-    Eigen::Matrix<double,9,1>* ptrResults;
-    Eigen::Matrix<double,4,4> A_Long;
-    Eigen::Matrix<double,5,5> A_Lat;
-    Eigen::Matrix<double,4,2> B_Long;
-    Eigen::Matrix<double,5,2> B_Lat;
-    Eigen::Matrix<double,4,1>* Controls; aircraft_data *ac;
+    struct Matrix* ptrResults;
+    struct Matrix A_Long;
+    struct Matrix A_Lat;
+    struct Matrix B_Long;
+    struct Matrix B_Lat;
+    struct Matrix* Controls; aircraft_data *ac;
     flight_path *str_h;
 		autopilot_inputs *commands ;bool Autopiloted;
-    Eigen::Matrix<double,9,1>* state_history=nullptr;
-    Eigen::Matrix<double,2,1> select_lat;
-    Eigen::Matrix<double,9,1> yd;
+    struct Matrix* state_history;
+    struct Matrix select_lat;
+    struct Matrix yd;
   public:
-    fullLinear(Eigen::Matrix<double,4,1>* Controls,aircraft_data *ac ,flight_path *str_h ,
-			autopilot_inputs *commands, Eigen::Matrix<double,9,1>* results);
+    fullLinear(struct Matrix* Controls,aircraft_data *ac ,flight_path *str_h ,
+			autopilot_inputs *commands, struct Matrix* results);
+    ~fullLinear();
     void solve();
     void h_calculation();
 };
-

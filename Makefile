@@ -3,7 +3,8 @@ UNAME_S := $(shell uname -s)
 
 CXX_SOURCES=\
 flightsim.cpp\
-$(wildcard src/*)
+$(wildcard src/*.cpp)\
+$(wildcard src/*.c)
 
 CXX_DEFS=\
 -DUSE_SERIAL
@@ -12,32 +13,32 @@ CXX_DEFS=\
 # normal (default, no debug flags)
 ifneq (,$(filter release,$(MAKECMDGOALS)))
     BUILD_TYPE=release
-    $(info [RELEASE BUILD])
+    # $(info [RELEASE BUILD])
 else ifneq (,$(filter debug,$(MAKECMDGOALS)))
     BUILD_TYPE=debug
-    $(info [DEBUG BUILD])
+    # $(info [DEBUG BUILD])
 else
     BUILD_TYPE=normal
-    $(info [NORMAL BUILD])
+    # $(info [NORMAL BUILD])
 endif
 
 # ---------------- Linux ----------------
 ifeq ($(UNAME_S),Linux)
     TARGET=Release/Release_Linux_x64/FlightSimulator
     CXX_INCLUDES=\
--Iinc/\
--I/usr/include/eigen3\
+    -Iinc/\
 
     ifeq ($(BUILD_TYPE),release)
+    		TARGET=Release/Release_Linux_x64/FlightSimulator
         CXXFLAGS=-std=c++17
         LDFLAGS=-L/usr/local/lib
-        CXX_LIBS=-Wl,-Bstatic -lxlsxio_read -lserial -Wl,-Bdynamic -lexpat -lminizip -lz -lm -lpthread
+        CXX_LIBS=-Wl,-Bstatic -lserial -Wl,-Bdynamic -lm -lpthread
     else ifeq ($(BUILD_TYPE),debug)
         CXXFLAGS=-std=c++23 -g
-        CXX_LIBS=-lm -lxlsxio_read -lserial -lpthread
+        CXX_LIBS=-lm -lserial -lpthread
     else
         CXXFLAGS=-std=c++23
-        CXX_LIBS=-lm -lxlsxio_read -lserial -lpthread
+        CXX_LIBS=-lm -lserial -lpthread
     endif
 endif
 
@@ -45,8 +46,7 @@ endif
 ifneq (,$(findstring MINGW,$(UNAME_S)))
     TARGET=Release/Release_Windows_x64/FlightSimulator
     CXX_INCLUDES=\
--Iinc/\
--I/ucrt64/include/eigen3\
+    -Iinc/\
 
     LDFLAGS=-L/ucrt64/lib
 
@@ -58,7 +58,7 @@ ifneq (,$(findstring MINGW,$(UNAME_S)))
         CXXFLAGS=-std=c++23 -static -static-libgcc -static-libstdc++
     endif
 
-    CXX_LIBS=-lxlsxio_read -lminizip -lz -lbz2 -lexpat -lwinpthread
+    CXX_LIBS=-lwinpthread
 endif
 
 all: $(TARGET)
@@ -67,11 +67,19 @@ debug: clean $(TARGET)
 
 release: clean $(TARGET)
 
+# ---------------- XLSX build (Eigen + xlsxio) ----------------
+# Normal `make` uses the hardcoded matrix-library data path and contains no
+# Eigen / xlsxio references. This target enables the spreadsheet path.
+xlsx: CXX_DEFS += -DUSE_XLSX
+xlsx: CXX_INCLUDES += -I/usr/include/eigen3
+xlsx: LDFLAGS += -L/usr/local/lib
+xlsx: CXX_LIBS = -Wl,-Bstatic -lxlsxio_read -lserial -Wl,-Bdynamic -lexpat -lminizip -lz -lm -lpthread
+xlsx: clean $(TARGET)
+
 $(TARGET): $(CXX_SOURCES)
 	$(CXX) $(CXX_SOURCES) $(CXXFLAGS) $(CXX_INCLUDES) $(LDFLAGS) $(CXX_DEFS) -o $@ $(CXX_LIBS)
-
 clean:
 	rm -f $(TARGET)
 install:
-	mkdir -p /usr/share/3lymnFlightSimulator && cp -r meta /usr/share/3lymnFlightSimulator
-	cp $(TARGET) /usr/bin
+	mkdir -p ~/.local/share/3lymnFlightSimulator && cp -r meta ~/.local/share/3lymnFlightSimulator
+	cp $(TARGET) ~/.local/bin

@@ -1,16 +1,19 @@
 #include "read_controls.hpp"
 bool readControlsFromFile(const std::string& filename,
-                        Eigen::Matrix<double, 4, 1>& controls,
-                        double& dt,
-                        double& tfinal) {
+                        struct Matrix* controls,
+                        float& dt,
+                        float& tfinal) {
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Error: Could not open controls file: " << filename << std::endl;
         return false;
     }
-    double da, de, dth, dr;
+    float da, de, dth, dr;
     if (file >> da >> de >> dth >> dr >> dt >> tfinal) {
-        controls << da, de, dth, dr;
+        controls->data[0][0] = da;
+        controls->data[1][0] = de;
+        controls->data[2][0] = dth;
+        controls->data[3][0] = dr;
         file.close();
         // Validate inputs
         if (dt <= 0) {
