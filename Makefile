@@ -6,19 +6,20 @@ flightsim.cpp\
 $(wildcard src/*)
 
 CXX_DEFS=\
--DUSE_SERIAL
+-DUSE_SERIAL\
+-DUSE_XLSX
 
 # Build type: release (static link, like Makefile.old), debug (-g), or
 # normal (default, no debug flags)
 ifneq (,$(filter release,$(MAKECMDGOALS)))
     BUILD_TYPE=release
-    $(info [RELEASE BUILD])
+    # $(info [RELEASE BUILD])
 else ifneq (,$(filter debug,$(MAKECMDGOALS)))
     BUILD_TYPE=debug
-    $(info [DEBUG BUILD])
+    # $(info [DEBUG BUILD])
 else
     BUILD_TYPE=normal
-    $(info [NORMAL BUILD])
+    # $(info [NORMAL BUILD])
 endif
 
 # ---------------- Linux ----------------

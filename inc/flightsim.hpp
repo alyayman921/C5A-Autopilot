@@ -13,8 +13,7 @@ the solvers, call the controllers after each step of solving
 #include <Eigen/Dense>
 
 #include "structs.h"
-// #include "read_controls.hpp"
-#include "readxlsx.h"
+#include "fileHandling.h"
 #include "aircraft_data.hpp"
 #include "RBDEqns.hpp"
 #include "controller.hpp"
@@ -36,6 +35,7 @@ char mode='0';
 autopilot_inputs commands;
 flight_path str_h;
 
-const char aircraft_file[] = "/usr/share/3lymnFlightSimulator/meta/C5A.xlsx";
+// const char aircraft_file[] = "/usr/share/3lymnFlightSimulator/meta/C5A.xlsx";
+const char aircraft_file[] = "/usr/share/3lymnFlightSimulator/meta/C5A.csv";
 Eigen::Matrix<double, 4, 1> Controls;
 int main(int argc, char* argv[]);

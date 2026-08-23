@@ -2,18 +2,12 @@
 
 int main(int argc, char* argv[]) {
 /*------------------------- Import Files ----------------------------------------*/
-    readxlsx(aircraft_file);
+    // readxslx(aircraft_file);
+    readcsv(aircraft_file);
     aircraft_data c5a = readAircraft();
 
-    // if (!readControlsFromFile("meta/controls.txt", Controls, dt, tfinal)) {
-    //     std::cerr << "Failed to read meta/controls.txt, Using defaults..." << std::endl;
-    //     Controls << 0.0, 0.0, 1000.0, 0.05;
-    //     dt = 0.01;
-    //     tfinal = 100.0;
-    // }
-    // if (!Autopiloted){std::cout << "Controls loaded: " << Controls.transpose() << std::endl;}
-
 /*------------------------- Handle Inputs----------------------------------------*/
+
     if (argc >= 2){
         std::string arg = argv[1];
         if (arg == "--help") {
@@ -22,16 +16,17 @@ int main(int argc, char* argv[]) {
             std::cout<< "\n";
             std::cout<< "Arguments    Usage\n";
             std::cout<< "---------    ---------------------------------------------------------\n";
+            std::cout<< "\n";
             std::cout<< "--help       print this message\n";
             std::cout<< "--dt         change timestep\n";
-            std::cout<< "--tf         change simulation time\n";
-            std::cout<< "--help       print this message\n";
+            std::cout<< "--tf         change simulation time\n\n";
             std::cout<< "--lin        switch to linear statespace simulator\n";
             std::cout<< "--loop       prevent the program from exiting after solving\n";
             std::cout<< "--manual     {Currently Disabled}\n";
             std::cout<< "--pitch      overrides altitude loop straight to pitch control\n";
             std::cout<< "--roll       overrides heading loop straight to roll control\n\n";
-            std::cout<< "--------------------- STM32F103C8T + Linux Only ----------------------\n";
+            std::cout<< "---------    -------- STM32F103C8T + Linux Only ----------------------\n";
+            std::cout<< "\n";
             std::cout<< "--ext        use external Micorcontroller as aircraft controller\n";
             std::cout<< "--onboard    solve the linear sim on the STM\n";
             return 0;
