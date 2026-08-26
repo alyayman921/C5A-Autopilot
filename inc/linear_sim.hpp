@@ -28,6 +28,7 @@ class fullLinear{
 		autopilot_inputs *commands ;bool Autopiloted;
     struct Matrix* state_history;
     struct Matrix select_lat;
+    struct Matrix select_long;
     struct Matrix yd;
   public:
     fullLinear(struct Matrix* Controls,aircraft_data *ac ,flight_path *str_h ,

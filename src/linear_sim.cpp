@@ -22,6 +22,7 @@ fullLinear::fullLinear(struct Matrix* Controls,aircraft_data *ac ,flight_path *s
       this->lsh.x_lat = vector(5);
       this->lsh.xd_lat = vector(5);
       this->select_lat = vector(2);
+      this->select_long = vector(2);
 
       static const float A_Long[16] = {
         -0.0038f,  0.0304f, -45.4812f,  -32.1140f,
@@ -59,7 +60,7 @@ fullLinear::fullLinear(struct Matrix* Controls,aircraft_data *ac ,flight_path *s
 fullLinear::~fullLinear(){
     mat_free_memory(&A_Long); mat_free_memory(&A_Lat);
     mat_free_memory(&B_Long); mat_free_memory(&B_Lat);
-    mat_free_memory(&yd); mat_free_memory(&select_lat);
+    mat_free_memory(&yd); mat_free_memory(&select_lat); mat_free_memory(&select_long);
     mat_free_memory(&lsh.x_long); mat_free_memory(&lsh.xd_long);
     mat_free_memory(&lsh.x_lat); mat_free_memory(&lsh.xd_lat);
 }
@@ -76,12 +77,14 @@ fullLinear::~fullLinear(){
         this->lsh.x_lat.data[2][0]=delta_state.data[5][0];
         this->lsh.x_lat.data[3][0]=delta_state.data[6][0];
         this->lsh.x_lat.data[4][0]=delta_state.data[8][0];
-        this->select_lat.data[0][0]=(*Controls).data[0][0];
-        this->select_lat.data[1][0]=(*Controls).data[3][0];
+        this->select_lat.data[0][0]=(*Controls).data[0][0];   // da  (lateral)
+        this->select_lat.data[1][0]=(*Controls).data[3][0];   // dr  (lateral)
+        this->select_long.data[0][0]=(*Controls).data[1][0];  // de  (longitudinal)
+        this->select_long.data[1][0]=(*Controls).data[2][0];  // dth (longitudinal)
         struct Matrix t1 = {0};
         mat_mult(A_Long, lsh.x_long, &t1);
         struct Matrix t2 = {0};
-        mat_mult(B_Long, select_lat, &t2);
+        mat_mult(B_Long, select_long, &t2);
         mat_add(&lsh.xd_long, &t1, &t2);
         struct Matrix t3 = {0};
         mat_mult(A_Lat, lsh.x_lat, &t3);
