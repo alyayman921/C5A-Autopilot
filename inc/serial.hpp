@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_SERIAL
 #include <libserial/SerialPort.h>
 #include <cstdlib>
 #include <cstring>
@@ -35,3 +36,4 @@ public:
     char write_string(char* a);
     std::string getSerialPort();
 };
+#endif

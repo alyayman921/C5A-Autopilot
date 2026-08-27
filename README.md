@@ -37,36 +37,17 @@ it is critical to run this from a terminal in windows, do this in the terminal
 
 **The release binaries are compiled with gcc-9 to ensure compatibility, follow this guide for best performance.**
 
-Clone This directory & cd inside of it
 ```bash
-git clone https://github.com/alyayman921/Cpp-Flight-Simulator.git && cd Cpp-Flight-Simulator
+mkdir /tmp/FlightSim
+cd /tmp/FlightSim
+git clone https://github.com/alyayman921/Cpp-Flight-Simulator.git
+cd Cpp*
+mkdir -p Release/Release_Linux_x64
+make clean
+make release
+make install
+echo "Now Run it with 'FlightSimulator --help' to Get started"
 ```
-**Install Eigen**
-Ubuntu (any debian)
-```bash
-sudo apt update && sudo apt install libeigen3-dev
-```
-
-### **Now you can run the install.sh**
-script that installs the remaining libraries and compiles at the end.
-```bash
-./install.sh
-```
-
-**Run with --help and get started**
-```bash
-FlightSimulator --help
-```
-
-
-
-After you install with the script, if you want to compile again just do this
-```bash
-make clean && make
-sudo make install
-```
-
-
 
 ---
 

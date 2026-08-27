@@ -11,7 +11,7 @@ check the Transfer function implementation, you have to match the order of the t
 #include <iostream>
 #include "structs.h"
 #include "tf.hpp"
-
+#include <cstring>
 #ifdef USE_SERIAL
 #include "serial.hpp"
 #endif

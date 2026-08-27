@@ -6,8 +6,6 @@ flightsim.cpp\
 $(wildcard src/*.cpp)\
 $(wildcard src/*.c)
 
-CXX_DEFS=\
--DUSE_SERIAL
 
 # Build type: release (static link, like Makefile.old), debug (-g), or
 # normal (default, no debug flags)
@@ -28,11 +26,13 @@ ifeq ($(UNAME_S),Linux)
     CXX_INCLUDES=\
     -Iinc/\
 
+		CXX_DEFS=\
+
     ifeq ($(BUILD_TYPE),release)
     		TARGET=Release/Release_Linux_x64/FlightSimulator
         CXXFLAGS=-std=c++17
         LDFLAGS=-L/usr/local/lib
-        CXX_LIBS=-Wl,-Bstatic -lserial -Wl,-Bdynamic -lm -lpthread
+        CXX_LIBS=-Wl,-Bstatic -Wl,-Bdynamic -lm -lpthread
     else ifeq ($(BUILD_TYPE),debug)
         CXXFLAGS=-std=c++23 -g
         CXX_LIBS=-lm -lserial -lpthread
@@ -66,6 +66,9 @@ all: $(TARGET)
 debug: clean $(TARGET)
 
 release: clean $(TARGET)
+
+stm: CXX_DEFS += -DUSE_SERIAL
+stm: clean $(TARGET)
 
 # ---------------- XLSX build (Eigen + xlsxio) ----------------
 # Normal `make` uses the hardcoded matrix-library data path and contains no

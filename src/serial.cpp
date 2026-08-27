@@ -1,3 +1,4 @@
+#ifdef USE_SERIAL
 #include "serial.hpp"
 
 mySerial::mySerial() {}
@@ -164,3 +165,4 @@ std::string mySerial::getSerialPort(){
     }
 }
 
+#endif
