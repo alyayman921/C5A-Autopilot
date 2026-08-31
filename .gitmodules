@@ -1,0 +1,6 @@
+[submodule "STM32-Flight-Sim"]
+	path = STM32-Flight-Sim
+	url = https://github.com/alyayman921/STM32-Flight-Sim.git
+[submodule "Docs-Flight-Sim"]
+	path = Docs-Flight-Sim
+	url = https://github.com/alyayman921/Docs-Flight-Sim.git

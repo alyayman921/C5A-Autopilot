@@ -5,7 +5,8 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 [Linkedin 3/3](https://www.linkedin.com/posts/3lymn_autopilot-33-sooo-this-is-the-final-share-7488380808546938880-Xzcs/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAD8q71sBYWkieo0AnWkqPzl4N3JYOQFtBKU)
 
 
-![Release 1.41](Documentation/V1.41/Release1.41.gif)
+![Release 1.41](https://github.com/alyayman921/Docs-Flight-Sim/blob/22f7b473e203b28654dda597e06792ed1c77be67/V1.41/Release1.41.gif)
+
 
 # Features
 - Rigid Body Dynamics simulator with RK4 solver
@@ -14,6 +15,14 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 - Mode for STM32 board as Controller logic
 - Mode STM32 Standalone Linear Simulator
 - For Any Aircraft, provided you add your dynamics and controllers
+
+---
+
+<p align="center">
+  <img src="https://github.com/alyayman921/Docs-Flight-Sim/blob/22f7b473e203b28654dda597e06792ed1c77be67/V2/gfx.gif" alt="Speed Demo V2" />
+</p>
+
+---
 
 ## Build From Source
 *Dependencies:*
@@ -40,13 +49,13 @@ it is critical to run this from a terminal in windows, do this in the terminal
 ```bash
 mkdir /tmp/FlightSim
 cd /tmp/FlightSim
-git clone https://github.com/alyayman921/Cpp-Flight-Simulator.git
+git clone --depth 1 https://github.com/alyayman921/Cpp-Flight-Simulator.git
 cd Cpp*
 mkdir -p Release/Release_Linux_x64
 make clean
 make release
 make install
-echo "Now Run it with 'FlightSimulator --help' to Get started"
+echo "Now Run it with 'FlightSimulator --help' to Get started, if you don't see it, add ~/.local/bin to path"
 ```
 
 ---
@@ -72,7 +81,7 @@ if a state is to be derived (multiplied by s), for the first time step we set th
 ## TODO
 - [x] Make a Generalized Transfer Function class.
 - [x] Deploy controllers to an stm32 based embedded board.
-- [ ] Remove Libeigen and xlsxio
+- [x] Remove Libeigen and xlsxio
 - [ ] Attach a rendering GUI for the Simulator.
 - [ ] Publish to AUR
 
