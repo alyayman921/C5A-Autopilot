@@ -1,3 +1,4 @@
+.directory
 .clangd
 *.zip
 Aur/
@@ -17,3 +18,4 @@ meta/.~lock.C5A.xlsx#
 meta/controls.txt
 FlightSimulator
 stm/build
+adv_install.sh
