@@ -6,7 +6,6 @@ flightsim.cpp\
 $(wildcard src/*.cpp)\
 $(wildcard src/*.c)
 
-
 # Build type: release (static link, like Makefile.old), debug (-g), or
 # normal (default, no debug flags)
 ifneq (,$(filter release,$(MAKECMDGOALS)))
@@ -80,6 +79,7 @@ xlsx: CXX_LIBS = -Wl,-Bstatic -lxlsxio_read -lserial -Wl,-Bdynamic -lexpat -lmin
 xlsx: clean $(TARGET)
 
 $(TARGET): $(CXX_SOURCES)
+	mkdir -p Release/Release_Linux_x64
 	$(CXX) $(CXX_SOURCES) $(CXXFLAGS) $(CXX_INCLUDES) $(LDFLAGS) $(CXX_DEFS) -o $@ $(CXX_LIBS)
 clean:
 	rm -f $(TARGET)

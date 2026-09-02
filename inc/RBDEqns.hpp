@@ -8,7 +8,6 @@ and solves one time step for it, start by calling the constructor and then using
 #include <iostream>
 #include "structs.h"
 #include "matrix.h"
-
 //float eps = 0.00000011921; // matlab float eps
 const float eps = 0.000000000000000222044605;
 extern float dt;
