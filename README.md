@@ -32,7 +32,7 @@ during the course i was tasked to create an autopilot system for the Lockheed Ma
 No Dependencies!, Unless you want Serial communication or you want to use your own aircraft.
 ## **Windows Guide**
 Serial Library is not for windows
-[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.6/Release_Windows_x64.zip)
+[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases
 
 it is critical to run this from a terminal in windows, do this in the terminal
 ```powershell
@@ -41,7 +41,7 @@ it is critical to run this from a terminal in windows, do this in the terminal
 
 
 ## **Linux Guide:**
-[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases/download/V-1.6/Release_Linux_x64.zip)
+[Download Latest Release](https://github.com/alyayman921/Cpp-Flight-Simulator/releases
 
 **The release binaries are compiled with gcc-9 to ensure compatibility, follow this guide for best performance.**
 
